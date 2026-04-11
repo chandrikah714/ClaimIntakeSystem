@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>ClaimIntake.Processor</RootNamespace>
+		<!-- This makes it installable as a real Windows Service -->
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<SelfContained>false</SelfContained>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Azure Service Bus: Read messages from queue -->
+		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.1" />
+
+		<!-- SQL Server data access -->
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
+
+		<!-- Windows Service support -->
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
+
+		<!-- Polly: Retry policies (retry failed DB writes, etc.) -->
+		<PackageReference Include="Polly" Version="8.4.1" />
+		<PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ClaimIntake.Domain\ClaimIntake.Domain.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,128 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Account/Login.cshtml
+   PURPOSE: The login page HTML.
+   
+   "@" prefix = Razor syntax (mix of C# and HTML)
+   @model = tells Razor which ViewModel this view uses
+   @Html.* = Helper methods that generate safe HTML
+   asp-* = Tag Helpers (ASP.NET Core's way to add server logic to HTML tags)
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Login - Claim Management System";
+    Layout = null;  // No layout wrapper for login page (standalone page)
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body class="login-page">
+
+<div class="login-container">
+
+    <!-- Logo / Header -->
+    <div class="login-header">
+        <div class="login-logo">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="8" fill="#1a56db"/>
+                <path d="M20 8L28 14V26L20 32L12 26V14L20 8Z"
+                      fill="white" opacity="0.9"/>
+                <circle cx="20" cy="20" r="4" fill="#1a56db"/>
+            </svg>
+        </div>
+        <h1 class="login-title">Claims Portal</h1>
+        <p class="login-subtitle">Secure Medical Claim Management</p>
+    </div>
+
+    <!-- Login Form Card -->
+    <div class="login-card">
+        <h2 class="card-heading">Sign In to Your Account</h2>
+
+        @* Show error message if login failed *@
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error" role="alert">
+                <span class="alert-icon">⚠</span>
+                @Model.ErrorMessage
+            </div>
+        }
+
+        @* asp-action="Login" asp-controller="Account" generates:
+           <form method="post" action="/Account/Login"> *@
+        <form asp-action="Login" asp-controller="Account" method="post">
+
+            @* Anti-forgery token: Hidden field that prevents CSRF attacks.
+               The server checks this token on every POST. *@
+            @Html.AntiForgeryToken()
+
+            <!-- Username Field -->
+            <div class="form-group">
+                <label asp-for="Username" class="form-label">Username</label>
+                <input asp-for="Username"
+                       class="form-control"
+                       placeholder="Enter your username"
+                       autocomplete="username"
+                       autofocus />
+                @* asp-validation-for shows the error message for this field *@
+                <span asp-validation-for="Username" class="field-error"></span>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <label asp-for="Password" class="form-label">Password</label>
+                <div class="password-wrapper">
+                    <input asp-for="Password"
+                           class="form-control"
+                           placeholder="Enter your password"
+                           autocomplete="current-password"
+                           id="passwordInput" />
+                    <button type="button" class="toggle-password"
+                            onclick="togglePassword()"
+                            aria-label="Show/hide password">
+                        <span id="eyeIcon">👁</span>
+                    </button>
+                </div>
+                <span asp-validation-for="Password" class="field-error"></span>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary btn-block">
+                Sign In
+            </button>
+
+        </form>
+
+        <!-- Demo credentials hint (remove in production!) -->
+        <div class="demo-hint">
+            <p>Demo: <strong>claimuser1</strong> / <strong>Test@123</strong></p>
+        </div>
+    </div>
+
+    <p class="login-footer">
+        Secure connection. All data encrypted in transit.
+    </p>
+</div>
+
+<script>
+    // Toggle password visibility (show/hide characters)
+    function togglePassword() {
+        var input = document.getElementById('passwordInput');
+        var icon  = document.getElementById('eyeIcon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            icon.textContent = '👁';
+        }
+    }
+</script>
+
+</body>
+</html>

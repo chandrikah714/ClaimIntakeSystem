@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ClaimIntake.API/ClaimIntake.API.csproj" />
+  <Project Path="ClaimIntake.Domain/ClaimIntake.Domain.csproj" />
+  <Project Path="ClaimIntake.Processor/ClaimIntake.Processor.csproj" />
+  <Project Path="ClaimIntake.Tests/ClaimIntake.Tests.csproj" />
+  <Project Path="ClaimIntake.Web/ClaimIntake.Web.csproj" />
+</Solution>

@@ -1,0 +1,80 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Claim/Confirmation.cshtml
+   PURPOSE: Shows after successful claim submission
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.ClaimConfirmationViewModel
+@{
+    ViewData["Title"] = "Claim Submitted";
+}
+
+<div class="page-container">
+    <div class="confirmation-card">
+
+        <!-- Success Icon -->
+        <div class="success-icon">
+            <div class="success-circle">
+                <span class="checkmark">✓</span>
+            </div>
+        </div>
+
+        <h1 class="confirmation-title">Claim Submitted Successfully!</h1>
+        <p class="confirmation-subtitle">
+            Your claim has been encrypted and queued for processing.
+            You will receive a confirmation once it's reviewed.
+        </p>
+
+        <!-- Claim Details -->
+        <div class="claim-receipt">
+            <h2 class="receipt-title">Claim Receipt</h2>
+            <table class="receipt-table">
+                <tr>
+                    <td class="receipt-label">Claim ID</td>
+                    <td class="receipt-value receipt-id">@Model.ClaimId</td>
+                </tr>
+                <tr>
+                    <td class="receipt-label">Member ID</td>
+                    <td class="receipt-value">@Model.MemberId</td>
+                </tr>
+                <tr>
+                    <td class="receipt-label">Amount</td>
+                    <td class="receipt-value receipt-amount">
+                        @Model.ClaimAmount.ToString("C")
+                    </td>
+                </tr>
+                <tr>
+                    <td class="receipt-label">Submitted By</td>
+                    <td class="receipt-value">@Model.SubmittedBy</td>
+                </tr>
+                <tr>
+                    <td class="receipt-label">Submitted At</td>
+                    <td class="receipt-value">
+                        @Model.SubmittedAt.ToString("MMMM dd, yyyy HH:mm") UTC
+                    </td>
+                </tr>
+                <tr>
+                    <td class="receipt-label">Status</td>
+                    <td class="receipt-value">
+                        <span class="status-badge status-pending">Pending Processing</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="confirmation-actions">
+            <a href="/Claim/Submit" class="btn btn-primary">
+                Submit Another Claim
+            </a>
+            <button onclick="window.print()" class="btn btn-outline">
+                🖨 Print Receipt
+            </button>
+        </div>
+
+        <p class="print-hint">
+            Save your Claim ID: <strong>@Model.ClaimId</strong>
+            — you'll need it to track your claim's status.
+        </p>
+
+    </div>
+</div>

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>ClaimIntake.Web</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- BCrypt.Net: For securely hashing and verifying passwords -->
+		<!-- NEVER use MD5 or SHA1 for passwords - they are broken! BCrypt is safe. -->
+		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
+		<!-- Microsoft.Data.SqlClient: Connect to SQL Server database -->
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
+
+		<!-- Authentication: Built-in ASP.NET Core cookie authentication -->
+		<!-- (No extra package needed - it's part of the framework!) -->
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Reference to our shared Domain library -->
+		<!-- This means ClaimIntake.Web can use ClaimDto, etc. -->
+		<ProjectReference Include="..\ClaimIntake.Domain\ClaimIntake.Domain.csproj" />
+	</ItemGroup>
+
+</Project>

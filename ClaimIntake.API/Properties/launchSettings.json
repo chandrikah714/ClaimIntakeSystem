@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "ClaimIntake.API": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7037",
+      "launchBrowser": false
+    }
+  }
+}

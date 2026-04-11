@@ -1,0 +1,63 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Shared/_Layout.cshtml
+   PURPOSE: The master HTML template. All pages "inherit" from this.
+            It provides the nav bar, header, and footer.
+            @RenderBody() is where each page's content goes.
+   ============================================================ *@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Claims Portal</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    @* @await RenderSectionAsync renders any CSS/scripts the child view declares *@
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a href="/Claim/Submit" class="navbar-brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect width="24" height="24" rx="4" fill="#1a56db" />
+                    <path d="M12 4L18 8V16L12 20L6 16V8L12 4Z"
+                          fill="white" opacity="0.9" />
+                    <circle cx="12" cy="12" r="2.5" fill="#1a56db" />
+                </svg>
+                Claims Portal
+            </a>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="navbar-right">
+                    <span class="navbar-user">
+                        👤 @User.Identity.Name
+                    </span>
+                    <a href="/Account/Logout" class="btn btn-outline btn-sm">
+                        Sign Out
+                    </a>
+                </div>
+            }
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <p>
+            &copy; @DateTime.Now.Year Claims Portal. All data encrypted.
+            <span class="footer-badge">🔒 AES-256</span>
+        </p>
+    </footer>
+
+    <!-- Scripts: loaded at bottom of page for faster page load -->
+    <script src="~/js/validation.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

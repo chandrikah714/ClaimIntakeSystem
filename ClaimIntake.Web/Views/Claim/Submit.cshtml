@@ -1,0 +1,180 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Claim/Submit.cshtml
+   PURPOSE: The claim submission form.
+   This page only shows if the user is logged in ([Authorize] on controller).
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.ClaimFormViewModel
+@{
+    ViewData["Title"] = "Submit Claim";
+}
+
+<div class="page-container">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1 class="page-title">Submit New Claim</h1>
+            <p class="page-subtitle">
+                Fill in all required fields. Your claim will be processed securely.
+            </p>
+        </div>
+        <div class="page-header-right">
+            <span class="user-badge">
+                Logged in as: <strong>@User.Identity!.Name</strong>
+            </span>
+            <a href="/Account/Logout" class="btn btn-outline btn-sm">Logout</a>
+        </div>
+    </div>
+
+    <!-- Security Info Banner -->
+    <div class="info-banner">
+        <span class="info-icon">🔐</span>
+        <span>Your claim data is encrypted using AES-256 before transmission.</span>
+    </div>
+
+    <!-- Claim Form Card -->
+    <div class="form-card">
+        <h2 class="form-section-title">Claim Information</h2>
+
+        @* Show validation summary if ModelState has errors *@
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-error">
+                <strong>Please fix the following errors:</strong>
+                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            </div>
+        }
+
+        <form asp-action="Submit" asp-controller="Claim" method="post"
+              id="claimForm" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="form-grid">
+
+                <!-- Member ID -->
+                <div class="form-group">
+                    <label asp-for="MemberId" class="form-label required">
+                        Member ID
+                    </label>
+                    <input asp-for="MemberId"
+                           class="form-control"
+                           placeholder="e.g. MBR-00123"
+                           maxlength="50" />
+                    <span class="field-hint">The patient's insurance member number</span>
+                    <span asp-validation-for="MemberId" class="field-error"></span>
+                </div>
+
+                <!-- Provider ID -->
+                <div class="form-group">
+                    <label asp-for="ProviderId" class="form-label required">
+                        Provider ID
+                    </label>
+                    <input asp-for="ProviderId"
+                           class="form-control"
+                           placeholder="e.g. PRV-45678"
+                           maxlength="50" />
+                    <span class="field-hint">Doctor or hospital NPI / provider ID</span>
+                    <span asp-validation-for="ProviderId" class="field-error"></span>
+                </div>
+
+                <!-- Diagnosis Code -->
+                <div class="form-group">
+                    <label asp-for="DiagnosisCode" class="form-label required">
+                        Diagnosis Code (ICD-10)
+                    </label>
+                    <input asp-for="DiagnosisCode"
+                           class="form-control"
+                           placeholder="e.g. A01.1"
+                           maxlength="10"
+                           id="diagnosisInput" />
+                    <span class="field-hint">
+                        International Classification of Diseases code.
+                        Format: Letter + 2 digits + optional .suffix
+                    </span>
+                    <span asp-validation-for="DiagnosisCode" class="field-error"></span>
+                    <div id="icdPreview" class="icd-preview" style="display:none"></div>
+                </div>
+
+                <!-- Claim Amount -->
+                <div class="form-group">
+                    <label asp-for="ClaimAmount" class="form-label required">
+                        Claim Amount
+                    </label>
+                    <div class="input-prefix-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input asp-for="ClaimAmount"
+                               class="form-control with-prefix"
+                               type="number"
+                               step="0.01"
+                               min="0.01"
+                               max="999999.99"
+                               placeholder="0.00" />
+                    </div>
+                    <span class="field-hint">Total amount being claimed</span>
+                    <span asp-validation-for="ClaimAmount" class="field-error"></span>
+                </div>
+
+            </div>
+
+            <!-- Submit Section -->
+            <div class="form-footer">
+                <div class="form-footer-left">
+                    <p class="submit-note">
+                        By submitting, you confirm this claim information is accurate.
+                    </p>
+                </div>
+                <div class="form-footer-right">
+                    <button type="reset" class="btn btn-ghost">
+                        Clear Form
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <span id="submitText">Submit Claim Securely 🔒</span>
+                        <span id="submitSpinner" style="display:none">
+                            Submitting...
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Show spinner when form submits (prevents double-click)
+        document.getElementById('claimForm').addEventListener('submit', function(e) {
+            if (this.checkValidity()) {
+                document.getElementById('submitText').style.display = 'none';
+                document.getElementById('submitSpinner').style.display = 'inline';
+                document.getElementById('submitBtn').disabled = true;
+            }
+        });
+
+        // Real-time ICD-10 format preview
+        document.getElementById('diagnosisInput').addEventListener('input', function() {
+            var val     = this.value.toUpperCase().trim();
+            var preview = document.getElementById('icdPreview');
+            var pattern = /^[A-Z]\d{2}(\.\w{1,4})?$/;
+
+            if (val.length >= 3) {
+                preview.style.display = 'block';
+                if (pattern.test(val)) {
+                    preview.className    = 'icd-preview icd-valid';
+                    preview.textContent  = '✓ Valid ICD-10 format: ' + val;
+                } else {
+                    preview.className    = 'icd-preview icd-invalid';
+                    preview.textContent  = '✗ Invalid format. Example: A01.1';
+                }
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Auto-uppercase ICD-10 code
+        document.getElementById('diagnosisInput').addEventListener('blur', function() {
+            this.value = this.value.toUpperCase().trim();
+        });
+    </script>
+}
