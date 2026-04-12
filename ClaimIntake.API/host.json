@@ -3,8 +3,7 @@
   "logging": {
     "applicationInsights": {
       "samplingSettings": {
-        "isEnabled": true,
-        "excludedTypes": "Request"
+        "isEnabled": true
       }
     },
     "logLevel": {
@@ -12,16 +11,6 @@
       "Host.Results": "Error",
       "Function": "Information",
       "Host.Aggregator": "Trace"
-    }
-  },
-  "extensions": {
-    "serviceBus": {
-      "prefetchCount": 0,
-      "messageHandlerOptions": {
-        "autoComplete": false,
-        "maxConcurrentCalls": 4,
-        "maxAutoRenewDuration": "00:05:00"
-      }
     }
   }
 }

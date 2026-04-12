@@ -10,18 +10,18 @@ var host = new HostBuilder()
     {
         var config = ctx.Configuration;
 
-        var encryptionKey = config["EncryptionKey"]
+        var key = config["EncryptionKey"]
             ?? throw new InvalidOperationException(
                 "EncryptionKey missing from local.settings.json!");
 
-        services.AddSingleton(
-            _ => new AesEncryptionService(encryptionKey));
+        services.AddSingleton<IEncryptionService>(
+            _ => new AesEncryptionService(key));
 
-        var sbConn = config["ServiceBusConnection"]
+        var sb = config["ServiceBusConnection"]
             ?? throw new InvalidOperationException(
                 "ServiceBusConnection missing from local.settings.json!");
 
-        services.AddSingleton(_ => new ServiceBusClient(sbConn));
+        services.AddSingleton(_ => new ServiceBusClient(sb));
     })
     .Build();
 

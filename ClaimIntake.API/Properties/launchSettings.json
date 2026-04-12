@@ -2,8 +2,10 @@
   "profiles": {
     "ClaimIntake.API": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7037",
-      "launchBrowser": false
+      "commandLineArgs": "--port 7071",
+      "environmentVariables": {
+        "AZURE_FUNCTIONS_ENVIRONMENT": "Development"
+      }
     }
   }
 }

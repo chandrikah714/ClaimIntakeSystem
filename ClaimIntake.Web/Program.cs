@@ -20,6 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 // MVC: Enables Controllers and Views (the M-V-C pattern)
 // Model = data, View = HTML page, Controller = logic
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient();
 
 // Cookie Authentication: Users log in, get a cookie, cookie proves who they are
 // Think of it like getting a wristband at an event - you show it to get back in
@@ -61,7 +62,7 @@ else
 }
 
 // Force HTTPS: If someone visits http://, redirect to https://
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 // Static files: Serve CSS, JavaScript, images from wwwroot folder
 app.UseStaticFiles();

@@ -10,6 +10,7 @@
 // - Perfect for processing queue messages continuously!
 // ============================================================
 
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using ClaimIntake.Domain.Services;
 using ClaimIntake.Processor.Repositories;
@@ -55,17 +56,29 @@ var host = Host.CreateDefaultBuilder(args)
             ?? throw new InvalidOperationException(
                 "ServiceBusConnection is not configured!");
 
-        services.AddSingleton(_ => new ServiceBusClient(sbConn,
-            new ServiceBusClientOptions
+        // Prepare options once
+        var sbOptions = new ServiceBusClientOptions
+        {
+            // Retry up to 3 times with exponential backoff
+            RetryOptions = new ServiceBusRetryOptions
             {
-                // Retry up to 3 times with exponential backoff
-                RetryOptions = new ServiceBusRetryOptions
-                {
-                    MaxRetries = 3,
-                    Mode = ServiceBusRetryMode.Exponential,
-                    MaxDelay = TimeSpan.FromSeconds(30)
-                }
-            }));
+                MaxRetries = 3,
+                Mode = ServiceBusRetryMode.Exponential,
+                MaxDelay = TimeSpan.FromSeconds(30)
+            }
+        };
+
+        if (sbConn.Contains("Endpoint=", StringComparison.OrdinalIgnoreCase) ||
+            sbConn.Contains("SharedAccessKey", StringComparison.OrdinalIgnoreCase))
+        {
+            // Value looks like a connection string
+            services.AddSingleton(_ => new ServiceBusClient(sbConn, sbOptions));
+        }
+        else
+        {
+            // Value looks like a fully-qualified namespace — use a credential (e.g. DefaultAzureCredential)
+            services.AddSingleton(_ => new ServiceBusClient(sbConn, new DefaultAzureCredential(), sbOptions));
+        }
 
         // ── Claim Repository (talks to SQL Server) ───────────────────
         services.AddSingleton<IClaimRepository, SqlClaimRepository>();
