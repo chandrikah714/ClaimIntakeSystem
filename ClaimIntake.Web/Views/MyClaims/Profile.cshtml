@@ -1,0 +1,671 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/MyAccount/Profile.cshtml
+   PURPOSE: User profile with statistics and account details
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.UserProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="profile-wrapper">
+    <!-- Header Section -->
+    <div class="profile-header">
+        <div class="header-content">
+            <div class="avatar">@Model.Username.First().ToString().ToUpper()</div>
+            <div class="header-info">
+                <h1 class="profile-name">@Model.Username</h1>
+                <p class="profile-role">@(Model.Role == "Admin" ? "👑 Administrator" : "👤 User")</p>
+                <p class="profile-joined">Member since @Model.CreatedAt.ToString("MMMM yyyy")</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="/MyAccount/MyClaims" class="btn btn-primary">
+                📋 View All Claims
+            </a>
+            <a href="/Account/Logout" class="btn btn-outline">
+                🚪 Sign Out
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <!-- Total Claims Card -->
+        <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-content">
+                <p class="stat-label">Total Claims</p>
+                <p class="stat-value">@Model.TotalClaimsSubmitted</p>
+                <p class="stat-subtext">All time</p>
+            </div>
+        </div>
+
+        <!-- Pending Claims Card -->
+        <div class="stat-card">
+            <div class="stat-icon">⧖</div>
+            <div class="stat-content">
+                <p class="stat-label">Pending Review</p>
+                <p class="stat-value" style="color: #f59e0b;">@Model.PendingClaimsCount</p>
+                <p class="stat-subtext">Awaiting decision</p>
+            </div>
+        </div>
+
+        <!-- Approved Claims Card -->
+        <div class="stat-card">
+            <div class="stat-icon">✓</div>
+            <div class="stat-content">
+                <p class="stat-label">Approved</p>
+                <p class="stat-value" style="color: #057a55;">@Model.ApprovedClaimsCount</p>
+                <p class="stat-subtext">@Model.ApprovalRate.ToString("F1")% approval rate</p>
+            </div>
+        </div>
+
+        <!-- Rejected Claims Card -->
+        <div class="stat-card">
+            <div class="stat-icon">✕</div>
+            <div class="stat-content">
+                <p class="stat-label">Rejected</p>
+                <p class="stat-value" style="color: #c81e1e;">@Model.RejectedClaimsCount</p>
+                <p class="stat-subtext">Not approved</p>
+            </div>
+        </div>
+
+        <!-- Total Amount Card -->
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+                <p class="stat-label">Total Amount</p>
+                <p class="stat-value">@Model.TotalClaimsAmount.ToString("C0")</p>
+                <p class="stat-subtext">All claims</p>
+            </div>
+        </div>
+
+        <!-- Success Rate Card -->
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <p class="stat-label">Success Rate</p>
+                <p class="stat-value">@Model.ApprovalRate.ToString("F0")%</p>
+                <p class="stat-subtext">Claims approved</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+        <div class="chart-container">
+            <h3 class="chart-title">Claims Distribution</h3>
+            <div id="claimsChart" class="chart-placeholder">
+                <canvas id="claimsDistributionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3 class="chart-title">Claim Status Overview</h3>
+            <div id="statusChart" class="chart-placeholder">
+                <canvas id="statusPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Details Section -->
+    <div class="account-section">
+        <div class="section-card">
+            <h3 class="section-title">Account Details</h3>
+            <div class="details-grid">
+                <div class="detail-row">
+                    <span class="detail-label">Username</span>
+                    <span class="detail-value">@Model.Username</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Account Type</span>
+                    <span class="detail-value">
+                        @if (Model.Role == "Admin")
+                        {
+                            <span class="role-badge admin">👑 Administrator</span>
+                        }
+                        else
+                        {
+                            <span class="role-badge user">👤 Regular User</span>
+                        }
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Member Since</span>
+                    <span class="detail-value">@Model.CreatedAt.ToString("MMMM dd, yyyy")</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Account Status</span>
+                    <span class="detail-value">
+                        <span class="status-badge active">✓ Active</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <h3 class="section-title">Claim Statistics</h3>
+            <div class="progress-items">
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span class="progress-label">Approval Rate</span>
+                        <span class="progress-value">@Model.ApprovalRate.ToString("F1")%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: @Model.ApprovalRate%"></div>
+                    </div>
+                </div>
+
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span class="progress-label">Pending Claims</span>
+                        <span class="progress-value">@Model.PendingClaimsCount of @Model.TotalClaimsSubmitted</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill pending" style="width: @(Model.TotalClaimsSubmitted > 0 ? (Model.PendingClaimsCount * 100m / Model.TotalClaimsSubmitted) : 0)%"></div>
+                    </div>
+                </div>
+
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span class="progress-label">Approved Claims</span>
+                        <span class="progress-value">@Model.ApprovedClaimsCount of @Model.TotalClaimsSubmitted</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill approved" style="width: @(Model.TotalClaimsSubmitted > 0 ? (Model.ApprovedClaimsCount * 100m / Model.TotalClaimsSubmitted) : 0)%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="quick-actions-section">
+        <h3 class="section-title">Quick Actions</h3>
+        <div class="actions-grid">
+            <a href="/MyAccount/MyClaims" class="action-item">
+                <div class="action-icon">📋</div>
+                <h4>My Claims</h4>
+                <p>View and manage your claims</p>
+            </a>
+            <a href="/Claim/Submit" class="action-item">
+                <div class="action-icon">➕</div>
+                <h4>Submit Claim</h4>
+                <p>Create a new claim</p>
+            </a>
+            <a href="#" class="action-item" onclick="downloadReport(); return false;">
+                <div class="action-icon">📥</div>
+                <h4>Download Report</h4>
+                <p>Get your claims summary</p>
+            </a>
+            <a href="/Account/ChangePassword" class="action-item">
+                <div class="action-icon">🔐</div>
+                <h4>Change Password</h4>
+                <p>Update your security</p>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .profile-header {
+        background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+        box-shadow: 0 8px 24px rgba(0, 102, 204, 0.2);
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    @@media (max-width: 768px) {
+        .profile-header {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+        }
+    }
+
+    .avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: bold;
+        border: 3px solid white;
+    }
+
+    .header-info {
+        flex: 1;
+    }
+
+    .profile-name {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .profile-role {
+        font-size: 16px;
+        margin: 0 0 0.5rem 0;
+        opacity: 0.9;
+    }
+
+    .profile-joined {
+        font-size: 14px;
+        margin: 0;
+        opacity: 0.8;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .btn-primary {
+        background: white;
+        color: #0066cc;
+    }
+
+        .btn-primary:hover {
+            background: #f0f9ff;
+            transform: translateY(-2px);
+        }
+
+    .btn-outline {
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid white;
+        color: white;
+    }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1.5rem;
+        transition: all 0.3s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+        .stat-card:hover {
+            border-color: #0066cc;
+            box-shadow: 0 8px 16px rgba(0, 102, 204, 0.12);
+            transform: translateY(-4px);
+        }
+
+    .stat-icon {
+        font-size: 36px;
+        flex-shrink: 0;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #0066cc;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .stat-subtext {
+        font-size: 12px;
+        color: #9ca3af;
+        margin: 0;
+    }
+
+    .charts-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .chart-container {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .chart-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 1rem 0;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f3f4f6;
+    }
+
+    .chart-placeholder {
+        min-height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .account-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    @@media (max-width: 900px) {
+        .account-section {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .section-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 1.5rem 0;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f3f4f6;
+    }
+
+    .details-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+
+    .detail-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: #111827;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+        .role-badge.admin {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .role-badge.user {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+        .status-badge.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+    .progress-items {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .progress-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .progress-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .progress-value {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #0066cc;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+        .progress-fill.pending {
+            background: #f59e0b;
+        }
+
+        .progress-fill.approved {
+            background: #057a55;
+        }
+
+    .quick-actions-section {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+        .quick-actions-section .section-title {
+            margin-bottom: 1.5rem;
+        }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .action-item {
+        background: #f9fafb;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s;
+    }
+
+        .action-item:hover {
+            border-color: #0066cc;
+            background: #f0f9ff;
+            transform: translateY(-4px);
+        }
+
+    .action-icon {
+        font-size: 32px;
+        margin-bottom: 0.75rem;
+    }
+
+    .action-item h4 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .action-item p {
+        font-size: 13px;
+        color: #6b7280;
+        margin: 0;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    // Claims Distribution Chart
+    const claimsCtx = document.getElementById('claimsDistributionChart');
+    if (claimsCtx) {
+    new Chart(claimsCtx, {
+    type: 'bar',
+    data: {
+    labels: ['Pending', 'Approved', 'Rejected'],
+    datasets: [{
+    label: 'Number of Claims',
+    data: [@Model.PendingClaimsCount, @Model.ApprovedClaimsCount, @Model.RejectedClaimsCount],
+    backgroundColor: ['#f59e0b', '#057a55', '#c81e1e'],
+    borderRadius: 8,
+    borderSkipped: false
+    }]
+    },
+    options: {
+    responsive: true,
+    plugins: {
+    legend: { display: false }
+    },
+    scales: {
+    y: {
+    beginAtZero: true,
+    ticks: { stepSize: 1 }
+    }
+    }
+    }
+    });
+    }
+
+    // Status Pie Chart
+    const statusCtx = document.getElementById('statusPieChart');
+    if (statusCtx) {
+    new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+    labels: ['Pending', 'Approved', 'Rejected'],
+    datasets: [{
+    data: [@Model.PendingClaimsCount, @Model.ApprovedClaimsCount, @Model.RejectedClaimsCount],
+    backgroundColor: ['#f59e0b', '#057a55', '#c81e1e'],
+    borderColor: 'white',
+    borderWidth: 2
+    }]
+    },
+    options: {
+    responsive: true,
+    plugins: {
+    legend: {
+    position: 'bottom',
+    labels: { padding: 15 }
+    }
+    }
+    }
+    });
+    }
+    });
+
+    function downloadReport() {
+    alert('Report download feature coming soon!');
+    }
+</script>

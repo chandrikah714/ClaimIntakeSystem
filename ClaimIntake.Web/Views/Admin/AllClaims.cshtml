@@ -1,0 +1,218 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Admin/AllClaims.cshtml
+   PURPOSE: Advanced claims list with filtering and admin controls
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.AllClaimsViewModel
+@{
+    ViewData["Title"] = "All Claims";
+}
+
+<link rel="stylesheet" href="~/css/admin-allclaims.css" asp-append-version="true" />
+
+<div class="claims-dashboard">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">Claims Management</h1>
+            <p class="page-subtitle">View and manage all submitted claims</p>
+        </div>
+        <a href="/Admin/Dashboard" class="btn btn-outline">← Back to Dashboard</a>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="filters-card">
+        <h2 class="filter-heading">🔍 Advanced Filters</h2>
+        <form method="get" id="filterForm" class="filter-form">
+            <div class="filter-row">
+                <!-- Status Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select name="statusFilter" class="filter-control">
+                        <option value="">All Statuses</option>
+                        <option value="Pending" selected="@(Model.StatusFilter == "Pending" ? "selected" : null)">
+                            ⧖ Pending Review
+                        </option>
+                        <option value="Approved" selected="@(Model.StatusFilter == "Approved" ? "selected" : null)">
+                            ✓ Approved
+                        </option>
+                        <option value="Rejected" selected="@(Model.StatusFilter == "Rejected" ? "selected" : null)">
+                            ✕ Rejected
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Search Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">Search</label>
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="searchTerm" class="filter-control search-control"
+                               placeholder="Claim ID, Member ID, Provider ID..."
+                               value="@Model.SearchTerm" />
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        🔍 Search
+                    </button>
+                    <a href="/Admin/AllClaims" class="btn btn-ghost">
+                        ↺ Reset
+                    </a>
+                </div>
+            </div>
+
+            <!-- Advanced Options (Collapsible) -->
+            <div class="advanced-options" id="advancedOptions">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label class="filter-label">Claim Date Range</label>
+                        <input type="date" class="filter-control" />
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Min Amount</label>
+                        <input type="number" class="filter-control" placeholder="$0" />
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Max Amount</label>
+                        <input type="number" class="filter-control" placeholder="$999,999" />
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="advanced-toggle" onclick="toggleAdvanced()">
+                ⚙️ Advanced Options
+            </button>
+        </form>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="stats-summary">
+        <div class="stat-item">
+            <span class="stat-label">Total Results</span>
+            <span class="stat-value">@Model.Claims.Count</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Showing Page</span>
+            <span class="stat-value">@Model.CurrentPage</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Per Page</span>
+            <span class="stat-value">@Model.PageSize</span>
+        </div>
+    </div>
+
+    <!-- Claims Table -->
+    <div class="table-container">
+        @if (Model.Claims.Any())
+        {
+            <table class="claims-table">
+                <thead>
+                    <tr>
+                        <th class="th-claim-id">Claim ID</th>
+                        <th class="th-member">Member ID</th>
+                        <th class="th-provider">Provider ID</th>
+                        <th class="th-amount">Amount</th>
+                        <th class="th-status">Status</th>
+                        <th class="th-submitted">Submitted</th>
+                        <th class="th-by">By</th>
+                        <th class="th-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var claim in Model.Claims)
+                    {
+                        <tr class="claim-row">
+                            <td class="td-claim-id">
+                                <code class="claim-code">@claim.ClaimId.Substring(0, Math.Min(12, claim.ClaimId.Length))</code>
+                            </td>
+                            <td class="td-member">@claim.MemberId</td>
+                            <td class="td-provider">@claim.ProviderId</td>
+                            <td class="td-amount">
+                                <span class="amount-badge">@claim.ClaimAmount.ToString("C")</span>
+                            </td>
+                            <td class="td-status">
+                                <span class="status-badge @claim.StatusBadgeClass">
+                                    <span class="status-icon">@claim.StatusIcon</span>
+                                    <span class="status-text">@claim.Status</span>
+                                </span>
+                            </td>
+                            <td class="td-submitted">
+                                <span class="submitted-date">
+                                    @claim.SubmittedAt.ToString("MMM dd, yyyy")
+                                </span>
+                                <span class="submitted-time">
+                                    @claim.SubmittedAt.ToString("HH:mm")
+                                </span>
+                            </td>
+                            <td class="td-by">@claim.SubmittedBy</td>
+                            <td class="td-actions">
+                                <a href="/Admin/ClaimDetails/@claim.ClaimId" 
+                                   class="btn btn-sm btn-primary" title="View Details">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing page <strong>@Model.CurrentPage</strong> 
+                    @if (Model.Claims.Any())
+                    {
+                        <span>• <strong>@Model.Claims.Count</strong> claims displayed</span>
+                    }
+                </div>
+                <div class="pagination-controls">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a href="/Admin/AllClaims?page=1&statusFilter=@Model.StatusFilter&searchTerm=@Model.SearchTerm"
+                           class="btn btn-sm btn-outline" title="First page">
+                            ⬅️ First
+                        </a>
+                        <a href="/Admin/AllClaims?page=@(Model.CurrentPage - 1)&statusFilter=@Model.StatusFilter&searchTerm=@Model.SearchTerm"
+                           class="btn btn-sm btn-outline" title="Previous page">
+                            ← Previous
+                        </a>
+                    }
+
+                    <span class="pagination-page">Page @Model.CurrentPage</span>
+
+                    <a href="/Admin/AllClaims?page=@(Model.CurrentPage + 1)&statusFilter=@Model.StatusFilter&searchTerm=@Model.SearchTerm"
+                       class="btn btn-sm btn-outline" title="Next page">
+                        Next →
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <h3 class="empty-title">No Claims Found</h3>
+                <p class="empty-text">
+                    @if (!string.IsNullOrEmpty(Model.StatusFilter) || !string.IsNullOrEmpty(Model.SearchTerm))
+                    {
+                        <span>Try adjusting your filters or search terms</span>
+                    }
+                    else
+                    {
+                        <span>No claims have been submitted yet</span>
+                    }
+                </p>
+                <a href="/Admin/AllClaims" class="btn btn-primary">↺ Clear Filters</a>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+function toggleAdvanced() {
+    document.getElementById('advancedOptions').classList.toggle('show');
+}
+</script>

@@ -1,0 +1,169 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Admin/UserManagement.cshtml
+   PURPOSE: List and manage user accounts
+   ============================================================ *@
+
+@model List<ClaimIntake.Web.Models.UserViewModel>
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="user-management-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">User Management</h1>
+            <p class="page-subtitle">Manage user accounts and permissions</p>
+        </div>
+        <div class="header-actions">
+            <a href="/Admin/RegisterUser" class="btn btn-primary">
+                ➕ Register New User
+            </a>
+            <a href="/Admin/Dashboard" class="btn btn-outline">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+        @if (Model.Any())
+        {
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th class="col-username">Username</th>
+                        <th class="col-role">Role</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-created">Created</th>
+                        <th class="col-by">By</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr class="user-row">
+                            <td class="col-username">
+                                <strong>@user.Username</strong>
+                            </td>
+                            <td class="col-role">
+                                <span class="role-badge role-@user.Role.ToLower()">
+                                    @(user.Role == "Admin" ? "🔑" : "👤") @user.Role
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                <span class="status-badge @user.StatusClass">
+                                    @user.StatusBadge
+                                </span>
+                            </td>
+                            <td class="col-created">
+                                @user.CreatedAt.ToString("MMM dd, yyyy")
+                            </td>
+                            <td class="col-by">
+                                @user.CreatedBy
+                            </td>
+                            <td class="col-actions">
+                                @if (user.IsActive)
+                                {
+                                    <button onclick="deactivateUser(@user.UserId)" class="btn btn-sm btn-ghost">
+                                        Deactivate
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Inactive</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">👥</div>
+                <h3 class="empty-title">No Users Found</h3>
+                <p class="empty-text">Register your first user to get started.</p>
+                <a href="/Admin/RegisterUser" class="btn btn-primary">
+                    ➕ Register User
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    function deactivateUser(userId) {
+        if (!confirm('Are you sure you want to deactivate this user?')) return;
+    
+        fetch(`/Admin/DeactivateUser/${userId}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('User deactivated successfully.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+    }
+</script>
+
+<style>
+    .user-management-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: var(--space-xl) var(--space-lg);
+    }
+
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+        .users-table thead {
+            background: #f9fafb;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .users-table th {
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--color-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .users-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+    .role-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .role-admin {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .role-user {
+        background: #ecfdf5;
+        color: #065f46;
+    }
+
+    .text-muted {
+        color: var(--color-text-muted);
+        font-size: 13px;
+    }
+</style>

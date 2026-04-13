@@ -1,0 +1,504 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Admin/Dashboard.cshtml
+   PURPOSE: Premium admin dashboard with charts and KPIs
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="admin-dashboard">
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="page-title">Admin Dashboard</h1>
+            <p class="page-subtitle">Complete overview of system performance and claims</p>
+        </div>
+        <div class="header-date">
+            📅 <span id="currentDate"></span>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <!-- Total Claims KPI -->
+        <div class="kpi-card kpi-total">
+            <div class="kpi-icon">📋</div>
+            <div class="kpi-content">
+                <p class="kpi-label">Total Claims</p>
+                <p class="kpi-value">@Model.TotalClaims.ToString("N0")</p>
+                <p class="kpi-trend">All-time submissions</p>
+            </div>
+            <a href="/Admin/AllClaims" class="kpi-link">View All →</a>
+        </div>
+
+        <!-- Pending KPI -->
+        <div class="kpi-card kpi-warning">
+            <div class="kpi-icon">⧖</div>
+            <div class="kpi-content">
+                <p class="kpi-label">Pending Review</p>
+                <p class="kpi-value">@Model.PendingClaims</p>
+                <p class="kpi-trend">Awaiting decision</p>
+            </div>
+            <a href="/Admin/AllClaims?statusFilter=Pending" class="kpi-link">View Pending →</a>
+        </div>
+
+        <!-- Approved KPI -->
+        <div class="kpi-card kpi-success">
+            <div class="kpi-icon">✓</div>
+            <div class="kpi-content">
+                <p class="kpi-label">Approved Claims</p>
+                <p class="kpi-value">@Model.ApprovedClaims</p>
+                <p class="kpi-trend">@Model.ApprovalRate.ToString("F1")% approval rate</p>
+            </div>
+            <a href="/Admin/AllClaims?statusFilter=Approved" class="kpi-link">View Approved →</a>
+        </div>
+
+        <!-- Rejected KPI -->
+        <div class="kpi-card kpi-error">
+            <div class="kpi-icon">✕</div>
+            <div class="kpi-content">
+                <p class="kpi-label">Rejected Claims</p>
+                <p class="kpi-value">@Model.RejectedClaims</p>
+                <p class="kpi-trend">@((100 - Model.ApprovalRate).ToString("F1"))% rejection</p>
+            </div>
+            <a href="/Admin/AllClaims?statusFilter=Rejected" class="kpi-link">View Rejected →</a>
+        </div>
+
+        <!-- Total Amount KPI -->
+        <div class="kpi-card kpi-amount">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-content">
+                <p class="kpi-label">Total Amount</p>
+                <p class="kpi-value">@Model.TotalAmount.ToString("C0")</p>
+                <p class="kpi-trend">Avg: @Model.AverageClaimAmount.ToString("C0")</p>
+            </div>
+        </div>
+
+        <!-- Active Users KPI -->
+        <div class="kpi-card kpi-users">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-content">
+                <p class="kpi-label">Active Users</p>
+                <p class="kpi-value">@Model.ActiveUsers</p>
+                <p class="kpi-trend">System members</p>
+            </div>
+            <a href="/Admin/UserManagement" class="kpi-link">Manage Users →</a>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+        <!-- Claims Status Chart -->
+        <div class="chart-card">
+            <h3 class="chart-title">Claims by Status</h3>
+            <canvas id="statusChart"></canvas>
+        </div>
+
+        <!-- Claims Trend Chart -->
+        <div class="chart-card">
+            <h3 class="chart-title">Approval Rate</h3>
+            <div class="approval-chart">
+                <canvas id="approvalChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Amount Distribution Chart -->
+        <div class="chart-card">
+            <h3 class="chart-title">Claim Amount Distribution</h3>
+            <canvas id="amountChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="actions-grid">
+            <a href="/Admin/AllClaims" class="action-card">
+                <div class="action-icon">📊</div>
+                <h4>View All Claims</h4>
+                <p>Search, filter, and manage claims</p>
+            </a>
+            <a href="/Admin/RegisterUser" class="action-card">
+                <div class="action-icon">➕</div>
+                <h4>Register User</h4>
+                <p>Add new admin or user account</p>
+            </a>
+            <a href="/Admin/UserManagement" class="action-card">
+                <div class="action-icon">👥</div>
+                <h4>Manage Users</h4>
+                <p>Control user accounts</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="system-health">
+        <h2 class="section-title">System Health</h2>
+        <div class="health-metrics">
+            <div class="health-item">
+                <span class="health-label">Database Status</span>
+                <span class="health-badge healthy">✓ Operational</span>
+            </div>
+            <div class="health-item">
+                <span class="health-label">API Status</span>
+                <span class="health-badge healthy">✓ Operational</span>
+            </div>
+            <div class="health-item">
+                <span class="health-label">Last Sync</span>
+                <span class="health-badge">Just now</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.header-content {
+    flex: 1;
+}
+
+.page-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 0.5rem 0;
+}
+
+.page-subtitle {
+    font-size: 15px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.header-date {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* KPI Grid */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.kpi-card {
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.kpi-card.kpi-total::before { background: linear-gradient(90deg, #0066cc, #0052a3); }
+.kpi-card.kpi-success::before { background: linear-gradient(90deg, #057a55, #10b981); }
+.kpi-card.kpi-error::before { background: linear-gradient(90deg, #c81e1e, #f87171); }
+.kpi-card.kpi-warning::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.kpi-card.kpi-amount::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+.kpi-card.kpi-users::before { background: linear-gradient(90deg, #06b6d4, #0891b2); }
+
+.kpi-card:hover {
+    border-color: #0066cc;
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.15);
+    transform: translateY(-4px);
+}
+
+.kpi-icon {
+    font-size: 32px;
+}
+
+.kpi-content {
+    flex: 1;
+}
+
+.kpi-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.5rem 0;
+}
+
+.kpi-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0066cc;
+    margin: 0 0 0.25rem 0;
+}
+
+.kpi-trend {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.kpi-link {
+    color: #0066cc;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+    display: inline-block;
+}
+
+.kpi-link:hover {
+    color: #0052a3;
+    transform: translateX(3px);
+}
+
+/* Charts Section */
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.chart-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+    border-color: #0066cc;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.approval-chart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Quick Actions */
+.quick-actions {
+    margin-bottom: 3rem;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.action-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.action-card:hover {
+    border-color: #0066cc;
+    background: #f0f9ff;
+    transform: translateY(-6px);
+    box-shadow: 0 8px 24px rgba(0, 102, 204, 0.12);
+}
+
+.action-icon {
+    font-size: 40px;
+    margin-bottom: 1rem;
+}
+
+.action-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.5rem 0;
+}
+
+.action-card p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* System Health */
+.system-health {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.health-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.health-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.health-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.health-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.health-badge.healthy {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* Responsive */
+@@media (max-width: 900px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update current date
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', options);
+
+    // Status Distribution Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pending', 'Approved', 'Rejected'],
+            datasets: [{
+                data: [@Model.PendingClaims, @Model.ApprovedClaims, @Model.RejectedClaims],
+                backgroundColor: ['#f59e0b', '#057a55', '#c81e1e'],
+                borderColor: 'white',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 20 } }
+            }
+        }
+    });
+
+    // Approval Rate Chart
+    const approvalCtx = document.getElementById('approvalChart').getContext('2d');
+    new Chart(approvalCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Approved', 'Rejected'],
+            datasets: [{
+                label: 'Percentage',
+                data: [@Model.ApprovalRate, @(100 - Model.ApprovalRate)],
+                backgroundColor: ['#057a55', '#c81e1e'],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 100 }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // Amount Distribution Chart
+    const amountCtx = document.getElementById('amountChart').getContext('2d');
+    new Chart(amountCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Pending', 'Approved', 'Rejected'],
+            datasets: [{
+                label: 'Claims Count',
+                data: [@Model.PendingClaims, @Model.ApprovedClaims, @Model.RejectedClaims],
+                backgroundColor: ['#f59e0b', '#057a55', '#c81e1e'],
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+});
+</script>

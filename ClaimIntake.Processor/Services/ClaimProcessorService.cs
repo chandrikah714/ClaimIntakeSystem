@@ -19,9 +19,6 @@ using ClaimIntake.Domain.Models;
 using ClaimIntake.Domain.Services;
 using ClaimIntake.Domain.Validation;
 using ClaimIntake.Processor.Repositories;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text.Json;
 

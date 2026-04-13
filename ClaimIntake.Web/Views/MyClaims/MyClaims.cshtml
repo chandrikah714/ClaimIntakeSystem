@@ -1,0 +1,442 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/MyAccount/MyClaims.cshtml
+   PURPOSE: Shows user their own submitted claims
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.UserClaimsViewModel
+@{
+    ViewData["Title"] = "My Claims";
+}
+
+<div class="my-claims-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">My Claims</h1>
+            <p class="page-subtitle">Track your submitted claims and their status</p>
+        </div>
+        <div class="header-actions">
+            <a href="/Claim/Submit" class="btn btn-primary">
+                ➕ Submit New Claim
+            </a>
+            <a href="/MyAccount/Profile" class="btn btn-outline">
+                👤 My Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-card">
+        <form method="get" id="filterForm" class="filter-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label class="filter-label">Filter by Status</label>
+                    <select name="statusFilter" class="filter-control" onchange="document.getElementById('filterForm').submit()">
+                        <option value="">All Claims</option>
+                        @if (Model.StatusFilter == "Pending")
+                        {
+                            <option value="Pending" selected>⧖ Pending Review</option>
+                        }
+                        else
+                        {
+                            <option value="Pending">⧖ Pending Review</option>
+                        }
+
+                        @if (Model.StatusFilter == "Approved")
+                        {
+                            <option value="Approved" selected>✓ Approved</option>
+                        }
+                        else
+                        {
+                            <option value="Approved">✓ Approved</option>
+                        }
+
+                        @if (Model.StatusFilter == "Rejected")
+                        {
+                            <option value="Rejected" selected>✕ Rejected</option>
+                        }
+                        else
+                        {
+                            <option value="Rejected">✕ Rejected</option>
+                        }
+                    </select>
+                </div>
+                <div class="filter-stats">
+                    Total Claims: <strong>@Model.TotalCount</strong>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Claims List -->
+    <div class="claims-list">
+        @if (Model.Claims.Any())
+        {
+            @foreach (var claim in Model.Claims)
+            {
+                <div class="claim-card">
+                    <div class="claim-header">
+                        <div class="claim-id-section">
+                            <h3 class="claim-title">Claim #@claim.ClaimId.Substring(0, Math.Min(8, claim.ClaimId.Length))</h3>
+                            <p class="claim-submitted">
+                                Submitted @claim.SubmittedAt.ToString("MMMM dd, yyyy HH:mm")
+                            </p>
+                        </div>
+                        <div class="claim-status-section">
+                            <span class="status-badge @claim.StatusBadgeClass">
+                                <span class="status-icon">@claim.StatusIcon</span>
+                                <span class="status-text">@claim.Status</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="claim-details">
+                        <div class="detail-row">
+                            <div class="detail-item">
+                                <span class="detail-label">Member ID</span>
+                                <span class="detail-value">@claim.MemberId</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Provider ID</span>
+                                <span class="detail-value">@claim.ProviderId</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Amount</span>
+                                <span class="detail-value amount-value">@claim.ClaimAmount.ToString("C")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="claim-footer">
+                        <a href="/MyAccount/ClaimDetail/@claim.ClaimId" class="btn btn-primary btn-sm">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+            }
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination-section">
+                    <div class="pagination-info">
+                        Page @Model.CurrentPage of @Model.TotalPages
+                        (@((Model.CurrentPage - 1) * Model.PageSize + 1) - 
+                         @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCount) 
+                         of @Model.TotalCount)
+                    </div>
+                    <div class="pagination-controls">
+                        @if (Model.HasPreviousPage)
+                        {
+                            <a href="/MyAccount/MyClaims?page=1&statusFilter=@Model.StatusFilter"
+                               class="btn btn-sm btn-outline">First</a>
+                            <a href="/MyAccount/MyClaims?page=@(Model.CurrentPage - 1)&statusFilter=@Model.StatusFilter"
+                               class="btn btn-sm btn-outline">← Previous</a>
+                        }
+
+                        @if (Model.HasNextPage)
+                        {
+                            <a href="/MyAccount/MyClaims?page=@(Model.CurrentPage + 1)&statusFilter=@Model.StatusFilter"
+                               class="btn btn-sm btn-outline">Next →</a>
+                            <a href="/MyAccount/MyClaims?page=@Model.TotalPages&statusFilter=@Model.StatusFilter"
+                               class="btn btn-sm btn-outline">Last</a>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <h3 class="empty-title">No Claims Yet</h3>
+                <p class="empty-text">
+                    @if (!string.IsNullOrEmpty(Model.StatusFilter))
+                    {
+                        <span>You don't have any @Model.StatusFilter?.ToLower() claims.</span>
+                    }
+                    else
+                    {
+                        <span>You haven't submitted any claims yet.</span>
+                    }
+                </p>
+                <a href="/Claim/Submit" class="btn btn-primary">
+                    ➕ Submit Your First Claim
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- Information Section -->
+    <div class="info-section">
+        <h3 class="info-title">📋 What's Next?</h3>
+        <div class="info-content">
+            <ul class="info-list">
+                <li><strong>Pending:</strong> Your claim is being reviewed by our team. Typically takes 5-10 business days.</li>
+                <li><strong>Approved:</strong> Great news! Your claim has been approved and will be processed for payment.</li>
+                <li><strong>Rejected:</strong> The claim didn't meet requirements. Click to view details and learn why.</li>
+                <li><strong>Track Status:</strong> Check back anytime to see the latest status of your claims.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.my-claims-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.filter-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.filter-row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 250px;
+}
+
+.filter-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--color-text);
+}
+
+.filter-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: var(--font-sans);
+}
+
+.filter-stats {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.claims-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.claim-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.claim-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.claim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+    gap: var(--space-md);
+}
+
+.claim-id-section {
+    flex: 1;
+}
+
+.claim-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+    margin-bottom: 4px;
+}
+
+.claim-submitted {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.claim-status-section {
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge.status-approved {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.status-badge.status-pending {
+    background: var(--color-warning-bg);
+    color: #92400e;
+}
+
+.status-badge.status-rejected {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+.claim-details {
+    padding: var(--space-lg);
+}
+
+.detail-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-md);
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.amount-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.claim-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--space-lg);
+    background: #f9fafb;
+    border-top: 1px solid var(--color-border);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-xxl) var(--space-lg);
+    background: var(--color-card);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: var(--space-md);
+}
+
+.empty-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+
+.empty-text {
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-lg);
+}
+
+.pagination-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-lg);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-top: var(--space-lg);
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.info-section {
+    background: var(--color-primary-light);
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+}
+
+.info-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin: 0 0 var(--space-md) 0;
+}
+
+.info-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.info-list li {
+    padding: 8px 0;
+    color: #1e40af;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.info-list li::before {
+    content: "✓ ";
+    color: var(--color-success);
+    font-weight: bold;
+    margin-right: 8px;
+}
+</style>

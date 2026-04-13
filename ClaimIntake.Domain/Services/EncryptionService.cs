@@ -10,10 +10,10 @@
 // The "256" means the key is 256 bits (32 bytes) long.
 // ============================================================
 
+using ClaimIntake.Domain.Models;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using ClaimIntake.Domain.Models;
 
 namespace ClaimIntake.Domain.Services;
 

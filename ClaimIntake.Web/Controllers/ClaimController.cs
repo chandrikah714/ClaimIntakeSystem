@@ -13,12 +13,12 @@
 // 7. Redirects to confirmation page
 // ============================================================
 
+using ClaimIntake.Domain.Models;
+using ClaimIntake.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.Text.Json;
-using ClaimIntake.Domain.Models;
-using ClaimIntake.Web.Models;
 
 namespace ClaimIntake.Web.Controllers;
 

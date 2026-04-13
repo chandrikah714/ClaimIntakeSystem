@@ -15,8 +15,6 @@ using Azure.Messaging.ServiceBus;
 using ClaimIntake.Domain.Services;
 using ClaimIntake.Processor.Repositories;
 using ClaimIntake.Processor.Services;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 // IHostBuilder sets up the whole runtime environment
 var host = Host.CreateDefaultBuilder(args)

@@ -14,8 +14,8 @@
 using ClaimIntake.Domain.Models;
 using ClaimIntake.Domain.Services;
 using ClaimIntake.Domain.Validation;
-using Xunit;
 using FluentAssertions;
+using Xunit;
 // Makes assertions read like English: .Should().Be()
 
 namespace ClaimIntake.Tests;

@@ -1,8 +1,6 @@
 ﻿@* ============================================================
    FILE: ClaimIntake.Web/Views/Shared/_Layout.cshtml
-   PURPOSE: The master HTML template. All pages "inherit" from this.
-            It provides the nav bar, header, and footer.
-            @RenderBody() is where each page's content goes.
+   PURPOSE: Master layout with premium navbar and styling
    ============================================================ *@
 
 <!DOCTYPE html>
@@ -10,54 +8,562 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — Claims Portal</title>
-    <link rel="stylesheet" href="~/css/site.css" />
-    @* @await RenderSectionAsync renders any CSS/scripts the child view declares *@
+    <title>@ViewData["Title"] - Claims Management</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/enhanced-site.css" asp-append-version="true" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 </head>
 <body>
-
     <!-- Navigation Bar -->
     <nav class="navbar">
-        <div class="navbar-inner">
-            <a href="/Claim/Submit" class="navbar-brand">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <rect width="24" height="24" rx="4" fill="#1a56db" />
-                    <path d="M12 4L18 8V16L12 20L6 16V8L12 4Z"
-                          fill="white" opacity="0.9" />
-                    <circle cx="12" cy="12" r="2.5" fill="#1a56db" />
-                </svg>
-                Claims Portal
-            </a>
+        <div class="navbar-container">
+            <!-- Logo & Brand -->
+            <div class="navbar-brand">
+                <a href="/" class="logo">
+                    <span class="logo-icon">📋</span>
+                    <span class="logo-text">Claims Portal</span>
+                </a>
+            </div>
 
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <div class="navbar-right">
-                    <span class="navbar-user">
-                        👤 @User.Identity.Name
-                    </span>
-                    <a href="/Account/Logout" class="btn btn-outline btn-sm">
-                        Sign Out
-                    </a>
-                </div>
-            }
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <!-- Navigation Links -->
+            <div class="navbar-nav" id="navbarNav">
+                <!-- Authenticated User Links -->
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <div class="nav-section">
+                        <!-- Admin Navigation -->
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a href="/Admin/Dashboard" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Admin Dashboard</span>
+                            </a>
+                            <a href="/Admin/AllClaims" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "AllClaims" ? "active" : "")">
+                                <i class="fas fa-file-alt"></i>
+                                <span>All Claims</span>
+                            </a>
+                            <a href="/Admin/UserManagement" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "UserManagement" ? "active" : "")">
+                                <i class="fas fa-users"></i>
+                                <span>Users</span>
+                            </a>
+                            <a href="/Admin/RegisterUser" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "RegisterUser" ? "active" : "")">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Register User</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <!-- Regular User Navigation -->
+                            <a href="/MyAccount/MyClaims" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "MyAccount" && ViewContext.RouteData.Values["Action"]?.ToString() == "MyClaims" ? "active" : "")">
+                                <i class="fas fa-list"></i>
+                                <span>My Claims</span>
+                            </a>
+                            <a href="/Claim/Submit" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Claim" && ViewContext.RouteData.Values["Action"]?.ToString() == "Submit" ? "active" : "")">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Submit Claim</span>
+                            </a>
+                        }
+                    </div>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="nav-section nav-profile">
+                        <div class="profile-dropdown">
+                            <button class="profile-button" id="profileDropdownToggle">
+                                <div class="profile-avatar">@User.Identity?.Name?.First().ToString().ToUpper()</div>
+                                <span class="profile-name">@User.Identity?.Name</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dropdown-menu" id="profileDropdown">
+                                <a href="/MyAccount/Profile" class="dropdown-item">
+                                    <i class="fas fa-user-circle"></i>
+                                    My Profile
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="/Account/ChangePassword" class="dropdown-item">
+                                    <i class="fas fa-key"></i>
+                                    Change Password
+                                </a>
+                                <a href="/Account/Logout" class="dropdown-item logout">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- Guest Navigation -->
+                    <div class="nav-section">
+                        <a href="/Account/Login" class="nav-link">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Sign In</span>
+                        </a>
+                    </div>
+                }
+            </div>
         </div>
     </nav>
 
-    <!-- Main Content Area -->
+    <!-- Main Content -->
     <main class="main-content">
+        @if (!string.IsNullOrEmpty(ViewData["Message"]?.ToString()))
+        {
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                @ViewData["Message"]
+            </div>
+        }
+
         @RenderBody()
     </main>
 
     <!-- Footer -->
-    <footer class="site-footer">
-        <p>
-            &copy; @DateTime.Now.Year Claims Portal. All data encrypted.
-            <span class="footer-badge">🔒 AES-256</span>
-        </p>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Claims Portal</h4>
+                <p>Streamlined claims management system for efficient processing.</p>
+            </div>
+            <div class="footer-section">
+                <h5>Quick Links</h5>
+                <ul>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <li><a href="/">Home</a></li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li><a href="/Admin/Dashboard">Dashboard</a></li>
+                        }
+                        else
+                        {
+                            <li><a href="/MyAccount/MyClaims">My Claims</a></li>
+                        }
+                        <li><a href="/Account/Logout">Sign Out</a></li>
+                    }
+                    else
+                    {
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/Account/Login">Sign In</a></li>
+                    }
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h5>Support</h5>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Claims Management Portal. All rights reserved.</p>
+        </div>
     </footer>
 
-    <!-- Scripts: loaded at bottom of page for faster page load -->
-    <script src="~/js/validation.js"></script>
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    
+    <script>
+            // Mobile Menu Toggle
+            document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+                document.getElementById('navbarNav').classList.toggle('active');
+            });
+
+            // Profile Dropdown Toggle
+            document.getElementById('profileDropdownToggle').addEventListener('click', function() {
+                document.getElementById('profileDropdown').classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const profileDropdown = document.getElementById('profileDropdown');
+                const profileButton = document.getElementById('profileDropdownToggle');
+                if (profileDropdown && !profileButton.contains(event.target) && !profileDropdown.contains(event.target)) {
+                    profileDropdown.classList.remove('show');
+                }
+            });
+
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                const navbarNav = document.getElementById('navbarNav');
+                const mobileToggle = document.getElementById('mobileMenuToggle');
+                if (navbarNav && !mobileToggle.contains(event.target) && !navbarNav.contains(event.target)) {
+                    navbarNav.classList.remove('active');
+                }
+            });
+    </script>
 </body>
 </html>
+
+<style>
+    :root {
+        --primary-color: #0066cc;
+        --primary-dark: #0052a3;
+        --primary-light: #f0f9ff;
+        --success-color: #057a55;
+        --error-color: #c81e1e;
+        --warning-color: #f59e0b;
+        --text-dark: #111827;
+        --text-muted: #6b7280;
+        --border-color: #e5e7eb;
+        --bg-light: #f9fafb;
+    }
+
+    /* Navbar Styles */
+    .navbar {
+        background: white;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .navbar-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 70px;
+    }
+
+    .navbar-brand {
+        flex-shrink: 0;
+    }
+
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+        color: var(--primary-color);
+        font-weight: 700;
+        font-size: 20px;
+    }
+
+    .logo-icon {
+        font-size: 28px;
+    }
+
+    .logo-text {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .mobile-menu-toggle {
+        display: none;
+        flex-direction: column;
+        background: none;
+        border: none;
+        cursor: pointer;
+        gap: 6px;
+        padding: 0.5rem;
+    }
+
+        .mobile-menu-toggle span {
+            width: 24px;
+            height: 3px;
+            background: var(--text-dark);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translateY(12px);
+        }
+
+        .mobile-menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translateY(-12px);
+        }
+
+    .navbar-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        margin-left: 2rem;
+    }
+
+    .nav-section {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+        .nav-link:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .nav-link.active {
+            background: var(--primary-light);
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+    .nav-profile {
+        margin-left: auto;
+        gap: 1rem;
+    }
+
+    .profile-dropdown {
+        position: relative;
+    }
+
+    .profile-button {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: var(--bg-light);
+        border: 1px solid var(--border-color);
+        border-radius: 99px;
+        padding: 0.5rem 0.5rem 0.5rem 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+        color: var(--text-dark);
+    }
+
+        .profile-button:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-color);
+        }
+
+    .profile-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 200px;
+        margin-top: 0.5rem;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.2s;
+    }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: var(--text-dark);
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+
+        .dropdown-item:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .dropdown-item.logout {
+            color: var(--error-color);
+        }
+
+            .dropdown-item.logout:hover {
+                background: #fee2e2;
+            }
+
+    .dropdown-divider {
+        height: 1px;
+        background: var(--border-color);
+        margin: 0.5rem 0;
+    }
+
+    /* Main Content */
+    .main-content {
+        min-height: calc(100vh - 140px);
+        padding: 2rem 0;
+        background: var(--bg-light);
+    }
+
+    /* Footer */
+    .footer {
+        background: var(--text-dark);
+        color: white;
+        padding: 3rem 1.5rem 1rem;
+        margin-top: auto;
+    }
+
+    .footer-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .footer-section h4,
+    .footer-section h5 {
+        font-size: 16px;
+        margin: 0 0 1rem 0;
+    }
+
+    .footer-section p {
+        font-size: 14px;
+        color: #d1d5db;
+        line-height: 1.6;
+    }
+
+    .footer-section ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .footer-section li {
+        margin-bottom: 0.75rem;
+    }
+
+    .footer-section a {
+        color: #d1d5db;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+    .footer-bottom {
+        text-align: center;
+        padding-top: 2rem;
+        border-top: 1px solid #374151;
+        color: #9ca3af;
+        font-size: 14px;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .navbar-container {
+            height: 60px;
+        }
+
+        .mobile-menu-toggle {
+            display: flex;
+        }
+
+        .navbar-nav {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            background: white;
+            flex-direction: column;
+            gap: 0;
+            border-bottom: 1px solid var(--border-color);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            margin-left: 0;
+        }
+
+            .navbar-nav.active {
+                max-height: 500px;
+            }
+
+        .nav-section {
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+        }
+
+        .nav-link {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 0;
+        }
+
+        .nav-profile {
+            width: 100%;
+            margin-left: 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .logo-text {
+            display: none;
+        }
+
+        .profile-name {
+            display: none;
+        }
+
+        .dropdown-menu {
+            right: -1px;
+        }
+    }
+
+    /* Alert */
+    .alert {
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin: 1rem 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 500;
+    }
+
+    .alert-info {
+        background: var(--primary-light);
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+    }
+</style>

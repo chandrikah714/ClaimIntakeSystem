@@ -1,0 +1,354 @@
+﻿
+@* ============================================================
+   FILE: ClaimIntake.Web/Views/Admin/ClaimDetails.cshtml
+   PURPOSE: Detailed view of a claim with status management
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.AdminClaimDetailViewModel
+@{
+    ViewData["Title"] = "Claim Details";
+}
+
+<div class="claim-detail-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Claim Details</h1>
+            <p class="page-subtitle">Claim #@Model.ClaimId.Substring(0, Math.Min(12, Model.ClaimId.Length))</p>
+        </div>
+        <a href="/Admin/AllClaims" class="btn btn-outline">← Back to Claims</a>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="detail-grid">
+        <!-- Left Column: Claim Info -->
+        <div class="detail-column">
+            <!-- Claim Information Card -->
+            <div class="detail-card">
+                <h3 class="card-title">Claim Information</h3>
+                <div class="info-group">
+                    <div class="info-row">
+                        <span class="info-label">Claim ID</span>
+                        <code class="info-value">@Model.ClaimId</code>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Member ID</span>
+                        <span class="info-value">@Model.MemberId</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Provider ID</span>
+                        <span class="info-value">@Model.ProviderId</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Diagnosis Code</span>
+                        <span class="info-value">@Model.DiagnosisCode</span>
+                    </div>
+                    <div class="info-row highlighted">
+                        <span class="info-label">Claim Amount</span>
+                        <span class="info-value amount">@Model.ClaimAmount.ToString("C")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submission Details -->
+            <div class="detail-card">
+                <h3 class="card-title">Submission Details</h3>
+                <div class="info-group">
+                    <div class="info-row">
+                        <span class="info-label">Submitted By</span>
+                        <span class="info-value">@Model.SubmittedBy</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Submitted At</span>
+                        <span class="info-value">@Model.SubmittedAt.ToString("MMMM dd, yyyy HH:mm:ss")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Days in System</span>
+                        <span class="info-value">@Model.DaysLabel</span>
+                    </div>
+                    @if (Model.ProcessedAt.HasValue)
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Processed At</span>
+                            <span class="info-value">@Model.ProcessedAt.Value.ToString("MMMM dd, yyyy HH:mm:ss")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Status Management -->
+        <div class="detail-column">
+            <!-- Status Card -->
+            <div class="detail-card status-card">
+                <h3 class="card-title">Current Status</h3>
+                <div class="status-display">
+                    <span class="status-badge large @(Model.Status switch {
+                        "Approved" => "status-approved",
+                        "Rejected" => "status-rejected",
+                        "Pending" => "status-pending",
+                        _ => "status-default"
+                    })">
+                        @Model.Status
+                    </span>
+                </div>
+
+                <!-- Update Status Form -->
+                <form id="statusForm" method="post" action="/Admin/UpdateClaimStatus">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="claimId" value="@Model.ClaimId" />
+                    
+                    <div class="form-group">
+                        <label class="form-label">Update Status</label>
+                        <select name="newStatus" class="form-control">
+                            <option value="Pending">⧖ Pending</option>
+                            <option value="Approved">✓ Approved</option>
+                            <option value="Rejected">✕ Rejected</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="3"
+                                  placeholder="Add any notes about this status change..."
+                                  maxlength="500"></textarea>
+                        <span class="field-hint">Max 500 characters</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        💾 Update Status
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status History Timeline -->
+    @if (Model.StatusHistory.Any())
+    {
+        <div class="status-history-card">
+            <h3 class="card-title">Status History</h3>
+            <div class="timeline">
+                @foreach (var history in Model.StatusHistory)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            @(history.Status switch {
+                                "Approved" => "✓",
+                                "Rejected" => "✕",
+                                "Pending" => "⧖",
+                                _ => "—"
+                            })
+                        </div>
+                        <div class="timeline-content">
+                            <h4 class="timeline-status">@history.Status</h4>
+                            <p class="timeline-meta">
+                                <strong>@history.ChangedBy</strong> on @history.FormattedDate
+                            </p>
+                            @if (!string.IsNullOrEmpty(history.Notes))
+                            {
+                                <p class="timeline-notes">@history.Notes</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+document.getElementById('statusForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    const response = await fetch('/Admin/UpdateClaimStatus', {
+        method: 'POST',
+        body: formData
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+        alert('Status updated successfully!');
+        location.reload();
+    } else {
+        alert('Error: ' + result.message);
+    }
+});
+</script>
+
+<style>
+.claim-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+@@media (max-width: 900px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.detail-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.detail-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 var(--space-md) 0;
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.info-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: var(--space-md);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+}
+
+.info-row.highlighted {
+    background: var(--color-primary-light);
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 14px;
+    color: var(--color-text);
+    word-break: break-all;
+}
+
+.info-value.amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+code {
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.status-display {
+    text-align: center;
+    padding: var(--space-lg) 0;
+}
+
+.status-badge.large {
+    font-size: 16px;
+    padding: 10px 20px;
+}
+
+.status-history-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+}
+
+.timeline {
+    margin-top: var(--space-lg);
+}
+
+.timeline-item {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    padding-left: 20px;
+    position: relative;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 30px;
+    bottom: -30px;
+    width: 2px;
+    background: var(--color-border);
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -20px;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.timeline-content {
+    flex: 1;
+}
+
+.timeline-status {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 4px 0;
+}
+
+.timeline-meta {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.timeline-notes {
+    font-size: 13px;
+    color: var(--color-text);
+    margin: 6px 0 0 0;
+    padding: 8px;
+    background: #f9fafb;
+    border-left: 3px solid var(--color-primary);
+    border-radius: 4px;
+}
+
+.btn-block {
+    width: 100%;
+}
+</style>

@@ -9,8 +9,8 @@
 // If anything is wrong, it turns you away with a list of problems.
 // ============================================================
 
-using System.Text.RegularExpressions;
 using ClaimIntake.Domain.Models;
+using System.Text.RegularExpressions;
 
 namespace ClaimIntake.Domain.Validation;
 

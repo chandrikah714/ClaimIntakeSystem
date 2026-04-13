@@ -16,8 +16,6 @@
 
 using ClaimIntake.Domain.Models;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
 

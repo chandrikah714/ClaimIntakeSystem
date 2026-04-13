@@ -1,0 +1,148 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Admin/RegisterUser.cshtml
+   PURPOSE: Admin form to register new users
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.AdminUserRegisterViewModel
+@{
+    ViewData["Title"] = "Register New User";
+}
+
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <h1 class="register-title">Register New User</h1>
+            <p class="register-subtitle">Add a new user to the system</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-error">
+                <span class="alert-icon">⚠</span>
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form asp-action="RegisterUser" asp-controller="Admin" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <!-- Username Field -->
+            <div class="form-group">
+                <label asp-for="Username" class="form-label required">Username</label>
+                <input asp-for="Username" class="form-control" 
+                       placeholder="e.g., john.doe" maxlength="100" />
+                <span class="field-hint">3-100 characters. Letters, numbers, dots, hyphens, underscores.</span>
+                <span asp-validation-for="Username" class="field-error"></span>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <label asp-for="Password" class="form-label required">Password</label>
+                <input asp-for="Password" class="form-control" type="password"
+                       placeholder="Must be strong" />
+                <span class="field-hint">
+                    Minimum 8 characters. Must include:
+                    <br/>✓ Uppercase letter (A-Z)
+                    <br/>✓ Lowercase letter (a-z)
+                    <br/>✓ Number (0-9)
+                    <br/>✓ Special character ($!%*?&)
+                </span>
+                <span asp-validation-for="Password" class="field-error"></span>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group">
+                <label asp-for="ConfirmPassword" class="form-label required">Confirm Password</label>
+                <input asp-for="ConfirmPassword" class="form-control" type="password"
+                       placeholder="Re-enter password" />
+                <span asp-validation-for="ConfirmPassword" class="field-error"></span>
+            </div>
+
+            <!-- Role Selection -->
+            <div class="form-group">
+                <label asp-for="Role" class="form-label required">User Role</label>
+                <select asp-for="Role" class="form-control">
+                    <option value="User">👤 User (Regular user - can submit claims)</option>
+                    <option value="Admin">🔑 Admin (Full system access)</option>
+                </select>
+                <span class="field-hint">
+                    <strong>User:</strong> Can submit and view their own claims.<br/>
+                    <strong>Admin:</strong> Can manage users, view all claims, update statuses.
+                </span>
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    ✓ Register User
+                </button>
+                <a href="/Admin/UserManagement" class="btn btn-ghost">
+                    ← Back
+                </a>
+            </div>
+
+            <p class="form-note">
+                This user will be able to log in immediately after registration.
+                They will receive no automatic email notification - you'll need to
+                inform them of their credentials separately.
+            </p>
+        </form>
+    </div>
+</div>
+
+<style>
+.register-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.register-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    box-shadow: var(--shadow-md);
+}
+
+.register-header {
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-lg);
+    border-bottom: 2px solid var(--color-border);
+}
+
+.register-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.register-subtitle {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin: 4px 0 0 0;
+}
+
+.field-hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: var(--space-lg);
+}
+
+.form-note {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    background: #f9fafb;
+    padding: var(--space-md);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-primary);
+    margin-top: var(--space-lg);
+}
+</style>

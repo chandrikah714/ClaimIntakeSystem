@@ -1,0 +1,541 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/MyAccount/ClaimDetail.cshtml
+   PURPOSE: User view of their specific claim with full details
+   ============================================================ *@
+
+@model ClaimIntake.Web.Models.UserClaimDetailViewModel
+@{
+    ViewData["Title"] = $"Claim #{Model.ClaimId.Substring(0, 8)}";
+}
+
+<div class="claim-detail-wrapper">
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb-nav">
+        <a href="/MyAccount/MyClaims" class="breadcrumb-link">← My Claims</a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">Claim Details</span>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="claim-detail-grid">
+        <!-- Left Column: Claim Information -->
+        <div class="detail-left">
+            <!-- Status Card -->
+            <div class="detail-card status-card">
+                <div class="status-display">
+                    <div class="status-icon-wrapper" style="color: @Model.StatusColor">
+                        @{
+                            var icon = Model.Status switch {
+                                "Approved" => "✓",
+                                "Rejected" => "✕",
+                                "Pending" => "⧖",
+                                _ => "—"
+                            };
+                        }
+                        <div class="status-icon">@icon</div>
+                    </div>
+                    <div class="status-info">
+                        <h2 class="status-title">@Model.Status</h2>
+                        <p class="status-message">@Model.StatusMessage</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claim Details Card -->
+            <div class="detail-card">
+                <h3 class="card-title">Claim Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Claim ID</span>
+                        <code class="info-value">@Model.ClaimId</code>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Claim Amount</span>
+                        <span class="info-value amount">@Model.ClaimAmount.ToString("C")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Member ID</span>
+                        <span class="info-value">@Model.MemberId</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Provider ID</span>
+                        <span class="info-value">@Model.ProviderId</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Diagnosis Code</span>
+                        <span class="info-value">@Model.DiagnosisCode</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Submitted</span>
+                        <span class="info-value">@Model.SubmittedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Info Card -->
+            <div class="detail-card quick-info">
+                <h3 class="card-title">What Happens Next?</h3>
+                <div class="info-timeline-simple">
+                    <div class="timeline-step @(Model.Status == "Pending" ? "active" : Model.Status != "Pending" ? "completed" : "")">
+                        <div class="step-number">1</div>
+                        <div class="step-text">
+                            <span class="step-title">Under Review</span>
+                            <span class="step-desc">Our team reviews your claim</span>
+                        </div>
+                    </div>
+                    <div class="timeline-step @(Model.Status == "Approved" || Model.Status == "Rejected" ? "active" : "")">
+                        <div class="step-number">2</div>
+                        <div class="step-text">
+                            <span class="step-title">Decision Made</span>
+                            <span class="step-desc">We decide to approve or reject</span>
+                        </div>
+                    </div>
+                    <div class="timeline-step @(Model.Status == "Approved" ? "active" : "")">
+                        <div class="step-number">3</div>
+                        <div class="step-text">
+                            <span class="step-title">Payment Processing</span>
+                            <span class="step-desc">Approved claims are processed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Status History -->
+        <div class="detail-right">
+            <div class="detail-card">
+                <h3 class="card-title">Status History</h3>
+                
+                @if (Model.StatusHistory.Any())
+                {
+                    <div class="status-timeline">
+                        @foreach (var history in Model.StatusHistory)
+                        {
+                            <div class="timeline-entry">
+                                <div class="timeline-marker" style="background-color: @(history.Status switch {
+                                    "Approved" => "#057a55",
+                                    "Rejected" => "#c81e1e",
+                                    "Pending" => "#f59e0b",
+                                    _ => "#6b7280"
+                                })">
+                                    @(history.Status switch {
+                                        "Approved" => "✓",
+                                        "Rejected" => "✕",
+                                        "Pending" => "⧖",
+                                        _ => "—"
+                                    })
+                                </div>
+                                <div class="timeline-content">
+                                    <h4 class="timeline-status">@history.Status</h4>
+                                    <p class="timeline-date">@history.FormattedDate</p>
+                                    <p class="timeline-by">Updated by: <strong>@history.ChangedBy</strong></p>
+                                    @if (!string.IsNullOrEmpty(history.Notes))
+                                    {
+                                        <div class="timeline-notes">
+                                            <strong>Notes:</strong> @history.Notes
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No history yet. Your claim is being processed.</p>
+                }
+            </div>
+
+            <!-- Help Section -->
+            <div class="detail-card help-section">
+                <h3 class="card-title">Need Help?</h3>
+                <p>If you have questions about your claim:</p>
+                <ul class="help-list">
+                    <li>Check this page for the latest status</li>
+                    <li>Status updates usually take 5-10 business days</li>
+                    <li>You'll receive an email when status changes</li>
+                    <li>Contact support for detailed questions</li>
+                </ul>
+                <button onclick="printClaim()" class="btn btn-outline">
+                    🖨️ Print Claim Details
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.claim-detail-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 14px;
+}
+
+.breadcrumb-link {
+    color: #0066cc;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.breadcrumb-link:hover {
+    color: #0052a3;
+}
+
+.breadcrumb-separator {
+    color: #d1d5db;
+}
+
+.breadcrumb-current {
+    color: #6b7280;
+}
+
+.claim-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+@@media (max-width: 900px) {
+    .claim-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.detail-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.detail-card:hover {
+    border-color: #0066cc;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.12);
+}
+
+.status-card {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #0066cc;
+    padding: 2rem;
+}
+
+.status-display {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.status-icon-wrapper {
+    flex-shrink: 0;
+}
+
+.status-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.status-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.5rem 0;
+}
+
+.status-message {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+@@media (max-width: 600px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.info-value.amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0066cc;
+}
+
+code {
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.quick-info {
+    background: #f9fafb;
+    border-color: #e5e7eb;
+}
+
+.info-timeline-simple {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.timeline-step {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background: white;
+    border-left: 4px solid #d1d5db;
+    transition: all 0.2s;
+}
+
+.timeline-step.active {
+    border-left-color: #0066cc;
+    background: #f0f9ff;
+}
+
+.timeline-step.completed {
+    border-left-color: #057a55;
+}
+
+.step-number {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.timeline-step.active .step-number {
+    background: #0066cc;
+    color: white;
+}
+
+.timeline-step.completed .step-number {
+    background: #057a55;
+    color: white;
+}
+
+.step-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.step-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.step-desc {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.status-timeline {
+    display: flex;
+    flex-direction: column;
+}
+
+.timeline-entry {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    position: relative;
+    padding-left: 2.5rem;
+}
+
+.timeline-entry:last-child {
+    border-bottom: none;
+}
+
+.timeline-entry::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.timeline-entry:last-child::before {
+    height: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #e5e7eb;
+}
+
+.timeline-status {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.25rem 0;
+}
+
+.timeline-date {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 0.25rem 0;
+}
+
+.timeline-by {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+.timeline-notes {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #92400e;
+}
+
+.help-section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.help-section p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 1rem 0;
+}
+
+.help-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+}
+
+.help-list li {
+    font-size: 14px;
+    color: #6b7280;
+    padding: 0.5rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.help-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: #0066cc;
+    font-weight: bold;
+}
+
+.text-muted {
+    color: #9ca3af;
+    font-size: 14px;
+    font-style: italic;
+}
+
+.btn-outline {
+    width: 100%;
+    background: white;
+    border: 2px solid #e5e7eb;
+    color: #111827;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-outline:hover {
+    border-color: #0066cc;
+    color: #0066cc;
+    background: #f0f9ff;
+}
+</style>
+
+<script>
+function printClaim() {
+    window.print();
+}
+</script>
