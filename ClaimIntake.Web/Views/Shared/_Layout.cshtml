@@ -1,569 +1,356 @@
 ﻿@* ============================================================
    FILE: ClaimIntake.Web/Views/Shared/_Layout.cshtml
-   PURPOSE: Master layout with premium navbar and styling
+   Redesigned — DM Sans font, notification bell, clean navbar
    ============================================================ *@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Claims Management</title>
+    <title>@ViewData["Title"] — Claims Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/enhanced-site.css" asp-append-version="true" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <!-- Logo & Brand -->
-            <div class="navbar-brand">
-                <a href="/" class="logo">
-                    <span class="logo-icon">📋</span>
-                    <span class="logo-text">Claims Portal</span>
-                </a>
-            </div>
 
-            <!-- Mobile Menu Toggle -->
-            <button class="mobile-menu-toggle" id="mobileMenuToggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-
-            <!-- Navigation Links -->
-            <div class="navbar-nav" id="navbarNav">
-                <!-- Authenticated User Links -->
-                @if (User.Identity?.IsAuthenticated == true)
-                {
-                    <div class="nav-section">
-                        <!-- Admin Navigation -->
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a href="/Admin/Dashboard" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
-                                <i class="fas fa-chart-line"></i>
-                                <span>Admin Dashboard</span>
-                            </a>
-                            <a href="/Admin/AllClaims" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "AllClaims" ? "active" : "")">
-                                <i class="fas fa-file-alt"></i>
-                                <span>All Claims</span>
-                            </a>
-                            <a href="/Admin/UserManagement" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "UserManagement" ? "active" : "")">
-                                <i class="fas fa-users"></i>
-                                <span>Users</span>
-                            </a>
-                            <a href="/Admin/RegisterUser" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "RegisterUser" ? "active" : "")">
-                                <i class="fas fa-user-plus"></i>
-                                <span>Register User</span>
-                            </a>
-                        }
-                        else
-                        {
-                            <!-- Regular User Navigation -->
-                            <a href="/MyAccount/MyClaims" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "MyAccount" && ViewContext.RouteData.Values["Action"]?.ToString() == "MyClaims" ? "active" : "")">
-                                <i class="fas fa-list"></i>
-                                <span>My Claims</span>
-                            </a>
-                            <a href="/Claim/Submit" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Claim" && ViewContext.RouteData.Values["Action"]?.ToString() == "Submit" ? "active" : "")">
-                                <i class="fas fa-plus-circle"></i>
-                                <span>Submit Claim</span>
-                            </a>
-                        }
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <!-- ── NAVBAR ──────────────────────────────────────── -->
+        <nav class="navbar">
+            <div class="navbar-inner">
+                <!-- Brand -->
+                <a href="/" class="nav-brand" style="text-decoration:none">
+                    <div class="nav-brand-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                     </div>
+                    <span class="nav-brand-text">Claims<span>Portal</span></span>
+                </a>
 
-                    <!-- User Profile Dropdown -->
-                    <div class="nav-section nav-profile">
-                        <div class="profile-dropdown">
-                            <button class="profile-button" id="profileDropdownToggle">
-                                <div class="profile-avatar">@User.Identity?.Name?.First().ToString().ToUpper()</div>
-                                <span class="profile-name">@User.Identity?.Name</span>
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-menu" id="profileDropdown">
-                                <a href="/MyAccount/Profile" class="dropdown-item">
-                                    <i class="fas fa-user-circle"></i>
-                                    My Profile
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a href="/Account/ChangePassword" class="dropdown-item">
-                                    <i class="fas fa-key"></i>
-                                    Change Password
-                                </a>
-                                <a href="/Account/Logout" class="dropdown-item logout">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                    Sign Out
-                                </a>
+                <!-- Nav Links -->
+                <div class="nav-links">
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a href="/Admin/Dashboard" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                            Dashboard
+                        </a>
+                        <a href="/Admin/AllClaims" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "AllClaims" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            All Claims
+                        </a>
+                        <a href="/Admin/UserManagement" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "UserManagement" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75" /></svg>
+                            Users
+                        </a>
+                        <a href="/Admin/RegisterUser" class="nav-link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>
+                            Register
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/MyAccount/MyClaims" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "MyClaims" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            My Claims
+                        </a>
+                        <a href="/Claim/Submit" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Submit" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                            Submit Claim
+                        </a>
+                        <a href="/MyAccount/Profile" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Profile" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                            Profile
+                        </a>
+                    }
+                </div>
+
+                <!-- Right section: Bell + User -->
+                <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+
+                    <!-- Notification Bell -->
+                    <div style="position:relative;">
+                        <button class="nav-bell" id="bellBtn" onclick="toggleNotifications()" aria-label="Notifications">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
+                            </svg>
+                            @{
+                                var unread = ViewBag.UnreadNotificationCount as int? ?? 0;
+                            }
+                            @if (unread > 0)
+                            {
+                                <span class="bell-badge" id="bellBadge">@(unread > 9 ? "9+" : unread.ToString())</span>
+                            }
+                        </button>
+
+                        <!-- Notification Dropdown -->
+                        <div class="notification-dropdown" id="notifDropdown">
+                            <div class="notif-header">
+                                <h4>Notifications</h4>
+                                <button class="notif-mark-all" onclick="markAllRead()">Mark all read</button>
+                            </div>
+                            <div class="notif-list" id="notifList">
+                                <div class="notif-empty">Loading notifications...</div>
+                            </div>
+                            <div class="notif-footer">
+                                <a href="/Notifications">View all notifications</a>
                             </div>
                         </div>
                     </div>
-                }
-                else
-                {
-                    <!-- Guest Navigation -->
-                    <div class="nav-section">
-                        <a href="/Account/Login" class="nav-link">
-                            <i class="fas fa-sign-in-alt"></i>
-                            <span>Sign In</span>
-                        </a>
-                    </div>
-                }
-            </div>
-        </div>
-    </nav>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        @if (!string.IsNullOrEmpty(ViewData["Message"]?.ToString()))
+                    <!-- User Menu -->
+                    <div style="position:relative;">
+                        <button class="nav-user" id="userMenuBtn" onclick="toggleUserMenu()">
+                            <div class="user-avatar">@(User.Identity?.Name?.Substring(0, 1).ToUpper())</div>
+                            <span class="user-name">@User.Identity?.Name</span>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <span class="user-role-pill admin">Admin</span>
+                            }
+                            else
+                            {
+                                <span class="user-role-pill user">User</span>
+                            }
+                            <svg style="width:12px;height:12px;color:var(--surface-400);transition:transform 200ms;" id="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </button>
+
+                        <div class="user-dropdown" id="userDropdown">
+                            @if (!User.IsInRole("Admin"))
+                            {
+                                <a href="/MyAccount/Profile" class="dropdown-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+                                    My Profile
+                                </a>
+                                <a href="/MyAccount/MyClaims" class="dropdown-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    My Claims
+                                </a>
+                            }
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a href="/Admin/Dashboard" class="dropdown-item">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                                    Dashboard
+                                </a>
+                            }
+                            <div class="dropdown-sep"></div>
+                            <a href="/Account/Logout" class="dropdown-item danger">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                                Sign Out
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    }
+
+    <!-- ── MAIN CONTENT ────────────────────────────────────── -->
+    <main class="@(User.Identity?.IsAuthenticated == true ? "main-content" : "")">
+        @if (TempData["SuccessMessage"] != null)
         {
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
-                @ViewData["Message"]
+            <div class="alert alert-success" style="margin-bottom:var(--sp-5);max-width:1360px;margin-left:auto;margin-right:auto;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                @TempData["SuccessMessage"]
             </div>
         }
-
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-error" style="margin-bottom:var(--sp-5);max-width:1360px;margin-left:auto;margin-right:auto;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                @TempData["ErrorMessage"]
+            </div>
+        }
         @RenderBody()
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>Claims Portal</h4>
-                <p>Streamlined claims management system for efficient processing.</p>
-            </div>
-            <div class="footer-section">
-                <h5>Quick Links</h5>
-                <ul>
-                    @if (User.Identity?.IsAuthenticated == true)
-                    {
-                        <li><a href="/">Home</a></li>
+    <!-- ── TOAST CONTAINER ─────────────────────────────────── -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ── FOOTER ─────────────────────────────────────────── -->
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <footer class="site-footer">
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                        <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--brand-600),var(--brand-800));border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                            <svg style="width:16px;height:16px;color:white;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </div>
+                        <span style="font-size:15px;font-weight:700;color:white;">ClaimsPortal</span>
+                    </div>
+                    <p>Secure, encrypted medical claim management system with real-time processing and role-based access control.</p>
+                </div>
+                <div class="footer-col">
+                    <h5>Quick Links</h5>
+                    <ul>
                         @if (User.IsInRole("Admin"))
                         {
                             <li><a href="/Admin/Dashboard">Dashboard</a></li>
+                            <li><a href="/Admin/AllClaims">All Claims</a></li>
+                            <li><a href="/Admin/UserManagement">User Management</a></li>
                         }
                         else
                         {
                             <li><a href="/MyAccount/MyClaims">My Claims</a></li>
+                            <li><a href="/Claim/Submit">Submit Claim</a></li>
+                            <li><a href="/MyAccount/Profile">My Profile</a></li>
                         }
-                        <li><a href="/Account/Logout">Sign Out</a></li>
-                    }
-                    else
-                    {
-                        <li><a href="/">Home</a></li>
-                        <li><a href="/Account/Login">Sign In</a></li>
-                    }
-                </ul>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h5>Security</h5>
+                    <ul>
+                        <li><a href="#">AES-256 Encrypted</a></li>
+                        <li><a href="#">HIPAA Compliant</a></li>
+                        <li><a href="#">Audit Logging</a></li>
+                        <li><a href="#">Role-Based Access</a></li>
+                    </ul>
+                </div>
             </div>
-            <div class="footer-section">
-                <h5>Support</h5>
-                <ul>
-                    <li><a href="#">Help Center</a></li>
-                    <li><a href="#">Contact Us</a></li>
-                    <li><a href="#">Privacy Policy</a></li>
-                </ul>
+            <div class="footer-bottom">
+                <span>&copy; 2025 ClaimsPortal. All rights reserved.</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--surface-600);">v2.0.0 · AES-256</span>
             </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2024 Claims Management Portal. All rights reserved.</p>
-        </div>
-    </footer>
+        </footer>
+    }
 
-    <script src="~/lib/jquery/jquery.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
-    
+
     <script>
-            // Mobile Menu Toggle
-            document.getElementById('mobileMenuToggle').addEventListener('click', function() {
-                document.getElementById('navbarNav').classList.toggle('active');
-            });
+            // ── Dropdown Toggles ──────────────────────────────────────
+            function toggleNotifications() {
+                const d = document.getElementById('notifDropdown');
+                const isOpen = d.classList.contains('open');
+                closeAll();
+                if (!isOpen) {
+                    d.classList.add('open');
+                    loadNotifications();
+                }
+            }
 
-            // Profile Dropdown Toggle
-            document.getElementById('profileDropdownToggle').addEventListener('click', function() {
-                document.getElementById('profileDropdown').classList.toggle('show');
-            });
+            function toggleUserMenu() {
+                const d = document.getElementById('userDropdown');
+                const chevron = document.getElementById('chevron');
+                const isOpen = d.classList.contains('open');
+                closeAll();
+                if (!isOpen) {
+                    d.classList.add('open');
+                    if (chevron) chevron.style.transform = 'rotate(180deg)';
+                }
+            }
 
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(event) {
-                const profileDropdown = document.getElementById('profileDropdown');
-                const profileButton = document.getElementById('profileDropdownToggle');
-                if (profileDropdown && !profileButton.contains(event.target) && !profileDropdown.contains(event.target)) {
-                    profileDropdown.classList.remove('show');
+            function closeAll() {
+                document.querySelectorAll('.notification-dropdown, .user-dropdown').forEach(el => el.classList.remove('open'));
+                const c = document.getElementById('chevron');
+                if (c) c.style.transform = '';
+            }
+
+            document.addEventListener('click', function(e) {
+                const bellBtn  = document.getElementById('bellBtn');
+                const userBtn  = document.getElementById('userMenuBtn');
+                const notifD   = document.getElementById('notifDropdown');
+                const userD    = document.getElementById('userDropdown');
+                if (!bellBtn?.contains(e.target) && !notifD?.contains(e.target) &&
+                    !userBtn?.contains(e.target) && !userD?.contains(e.target)) {
+                    closeAll();
                 }
             });
 
-            // Close mobile menu when clicking outside
-            document.addEventListener('click', function(event) {
-                const navbarNav = document.getElementById('navbarNav');
-                const mobileToggle = document.getElementById('mobileMenuToggle');
-                if (navbarNav && !mobileToggle.contains(event.target) && !navbarNav.contains(event.target)) {
-                    navbarNav.classList.remove('active');
+            // ── Notification Loader ───────────────────────────────────
+            async function loadNotifications() {
+                const list = document.getElementById('notifList');
+                if (!list) return;
+                try {
+                    const res  = await fetch('/Notifications/Recent');
+                    const data = await res.json();
+                    if (!data.length) {
+                        list.innerHTML = '<div class="notif-empty">You\'re all caught up! 🎉</div>';
+                        return;
+                    }
+                    list.innerHTML = data.map(n => `
+                        <a href="${n.actionUrl || '#'}" class="notif-item ${n.isRead ? '' : 'unread'}"
+                           onclick="markRead(${n.notificationId}, event)">
+                            <div class="notif-icon ${n.type.toLowerCase()}">${iconFor(n.type)}</div>
+                            <div class="notif-content">
+                                <div class="notif-title">${escHtml(n.title)}</div>
+                                <div class="notif-msg">${escHtml(n.message)}</div>
+                                <div class="notif-time">${timeAgo(n.createdAt)}</div>
+                            </div>
+                            <div class="notif-dot ${n.isRead ? 'read' : 'unread'}"></div>
+                        </a>`).join('');
+                } catch {
+                    list.innerHTML = '<div class="notif-empty">Could not load notifications.</div>';
                 }
-            });
+            }
+
+            function iconFor(type) {
+                const icons = {
+                    Success: '✓', Error: '✕', Warning: '!', Claim: '📋', Info: 'ℹ'
+                };
+                return icons[type] || 'ℹ';
+            }
+
+            async function markRead(id, e) {
+                try {
+                    await fetch('/Notifications/MarkRead/' + id, { method: 'POST' });
+                    updateBadge(-1);
+                } catch {}
+            }
+
+            async function markAllRead() {
+                try {
+                    await fetch('/Notifications/MarkAllRead', { method: 'POST' });
+                    const badge = document.getElementById('bellBadge');
+                    if (badge) badge.remove();
+                    loadNotifications();
+                } catch {}
+            }
+
+            function updateBadge(delta) {
+                const badge = document.getElementById('bellBadge');
+                if (!badge) return;
+                let count = parseInt(badge.textContent) + delta;
+                if (count <= 0) badge.remove();
+                else badge.textContent = count > 9 ? '9+' : count;
+            }
+
+            function timeAgo(dateStr) {
+                const diff = (Date.now() - new Date(dateStr)) / 1000;
+                if (diff < 60)    return 'just now';
+                if (diff < 3600)  return Math.floor(diff/60)  + 'm ago';
+                if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+                return Math.floor(diff/86400) + 'd ago';
+            }
+
+            function escHtml(s) {
+                return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            }
+
+            // ── Toast System ──────────────────────────────────────────
+            window.showToast = function(title, msg, type = 'info') {
+                const c = document.getElementById('toastContainer');
+                if (!c) return;
+                const icons = {
+                    success: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                    error:   '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+                    warning: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+                    info:    '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+                };
+                const t = document.createElement('div');
+                t.className = `toast ${type}`;
+                t.innerHTML = `${icons[type] || icons.info}
+                    <div><div class="toast-title">${escHtml(title)}</div><div class="toast-msg">${escHtml(msg)}</div></div>
+                    <button class="toast-close" onclick="this.parentElement.remove()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>`;
+                c.appendChild(t);
+                setTimeout(() => t.remove(), 5000);
+            };
     </script>
 </body>
 </html>
-
-<style>
-    :root {
-        --primary-color: #0066cc;
-        --primary-dark: #0052a3;
-        --primary-light: #f0f9ff;
-        --success-color: #057a55;
-        --error-color: #c81e1e;
-        --warning-color: #f59e0b;
-        --text-dark: #111827;
-        --text-muted: #6b7280;
-        --border-color: #e5e7eb;
-        --bg-light: #f9fafb;
-    }
-
-    /* Navbar Styles */
-    .navbar {
-        background: white;
-        border-bottom: 1px solid var(--border-color);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    .navbar-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        height: 70px;
-    }
-
-    .navbar-brand {
-        flex-shrink: 0;
-    }
-
-    .logo {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        text-decoration: none;
-        color: var(--primary-color);
-        font-weight: 700;
-        font-size: 20px;
-    }
-
-    .logo-icon {
-        font-size: 28px;
-    }
-
-    .logo-text {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .mobile-menu-toggle {
-        display: none;
-        flex-direction: column;
-        background: none;
-        border: none;
-        cursor: pointer;
-        gap: 6px;
-        padding: 0.5rem;
-    }
-
-        .mobile-menu-toggle span {
-            width: 24px;
-            height: 3px;
-            background: var(--text-dark);
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-
-        .mobile-menu-toggle.active span:nth-child(1) {
-            transform: rotate(45deg) translateY(12px);
-        }
-
-        .mobile-menu-toggle.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .mobile-menu-toggle.active span:nth-child(3) {
-            transform: rotate(-45deg) translateY(-12px);
-        }
-
-    .navbar-nav {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        flex: 1;
-        margin-left: 2rem;
-    }
-
-    .nav-section {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    .nav-link {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1rem;
-        color: var(--text-muted);
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 14px;
-        border-radius: 8px;
-        transition: all 0.2s;
-        white-space: nowrap;
-    }
-
-        .nav-link:hover {
-            background: var(--primary-light);
-            color: var(--primary-color);
-        }
-
-        .nav-link.active {
-            background: var(--primary-light);
-            color: var(--primary-color);
-            border-bottom: 3px solid var(--primary-color);
-        }
-
-    .nav-profile {
-        margin-left: auto;
-        gap: 1rem;
-    }
-
-    .profile-dropdown {
-        position: relative;
-    }
-
-    .profile-button {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        background: var(--bg-light);
-        border: 1px solid var(--border-color);
-        border-radius: 99px;
-        padding: 0.5rem 0.5rem 0.5rem 1rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-weight: 500;
-        color: var(--text-dark);
-    }
-
-        .profile-button:hover {
-            background: var(--primary-light);
-            border-color: var(--primary-color);
-        }
-
-    .profile-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 14px;
-    }
-
-    .dropdown-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: white;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        min-width: 200px;
-        margin-top: 0.5rem;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-10px);
-        transition: all 0.2s;
-    }
-
-        .dropdown-menu.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        color: var(--text-dark);
-        text-decoration: none;
-        transition: all 0.2s;
-        font-size: 14px;
-    }
-
-        .dropdown-item:hover {
-            background: var(--primary-light);
-            color: var(--primary-color);
-        }
-
-        .dropdown-item.logout {
-            color: var(--error-color);
-        }
-
-            .dropdown-item.logout:hover {
-                background: #fee2e2;
-            }
-
-    .dropdown-divider {
-        height: 1px;
-        background: var(--border-color);
-        margin: 0.5rem 0;
-    }
-
-    /* Main Content */
-    .main-content {
-        min-height: calc(100vh - 140px);
-        padding: 2rem 0;
-        background: var(--bg-light);
-    }
-
-    /* Footer */
-    .footer {
-        background: var(--text-dark);
-        color: white;
-        padding: 3rem 1.5rem 1rem;
-        margin-top: auto;
-    }
-
-    .footer-content {
-        max-width: 1400px;
-        margin: 0 auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .footer-section h4,
-    .footer-section h5 {
-        font-size: 16px;
-        margin: 0 0 1rem 0;
-    }
-
-    .footer-section p {
-        font-size: 14px;
-        color: #d1d5db;
-        line-height: 1.6;
-    }
-
-    .footer-section ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .footer-section li {
-        margin-bottom: 0.75rem;
-    }
-
-    .footer-section a {
-        color: #d1d5db;
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-
-        .footer-section a:hover {
-            color: white;
-        }
-
-    .footer-bottom {
-        text-align: center;
-        padding-top: 2rem;
-        border-top: 1px solid #374151;
-        color: #9ca3af;
-        font-size: 14px;
-    }
-
-    /* Responsive */
-    @@media (max-width: 768px) {
-        .navbar-container {
-            height: 60px;
-        }
-
-        .mobile-menu-toggle {
-            display: flex;
-        }
-
-        .navbar-nav {
-            position: absolute;
-            top: 60px;
-            left: 0;
-            right: 0;
-            background: white;
-            flex-direction: column;
-            gap: 0;
-            border-bottom: 1px solid var(--border-color);
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-            margin-left: 0;
-        }
-
-            .navbar-nav.active {
-                max-height: 500px;
-            }
-
-        .nav-section {
-            flex-direction: column;
-            gap: 0;
-            width: 100%;
-        }
-
-        .nav-link {
-            width: 100%;
-            padding: 1rem;
-            border-radius: 0;
-        }
-
-        .nav-profile {
-            width: 100%;
-            margin-left: 0;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .logo-text {
-            display: none;
-        }
-
-        .profile-name {
-            display: none;
-        }
-
-        .dropdown-menu {
-            right: -1px;
-        }
-    }
-
-    /* Alert */
-    .alert {
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        margin: 1rem 1.5rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-weight: 500;
-    }
-
-    .alert-info {
-        background: var(--primary-light);
-        border: 1px solid var(--primary-color);
-        color: var(--primary-color);
-    }
-</style>

@@ -12,12 +12,12 @@ namespace ClaimIntake.Web.Controllers;
 
 [Authorize]  // Must be logged in
 [Route("MyAccount")]
-public class MyClaimsController : Controller
+public class MyClaimsController : BaseController
 {
     private readonly IConfiguration _config;
     private readonly ILogger<MyClaimsController> _logger;
 
-    public MyClaimsController(IConfiguration config, ILogger<MyClaimsController> logger)
+    public MyClaimsController(IConfiguration config, ILogger<MyClaimsController> logger) : base(config)
     {
         _config = config;
         _logger = logger;

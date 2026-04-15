@@ -1,211 +1,275 @@
 ﻿// ============================================================
 // FILE: ClaimIntake.Web/Controllers/AccountController.cs
-// PURPOSE: Handles Login and Logout.
-//
-// HOW MVC WORKS (beginner explanation):
-// When you visit a URL like /Account/Login:
-// 1. ASP.NET looks for AccountController
-// 2. Calls the Login() method (called "Action")
-// 3. The action returns a View (the HTML page)
-// 4. The view is rendered and sent to the browser
+// PURPOSE: Authentication - Login, Logout, and session management
 // ============================================================
 
 using ClaimIntake.Web.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Security.Claims;
 
-namespace ClaimIntake.Web.Controllers;
-
-public class AccountController : Controller
+namespace ClaimIntake.Web.Controllers
 {
-    // IConfiguration lets us read from appsettings.json
-    private readonly IConfiguration _config;
-    private readonly ILogger<AccountController> _logger;
-
-    // Constructor Injection: ASP.NET automatically provides these objects
-    // This is called "Dependency Injection" (DI)
-    // We ask for what we need, the framework gives it to us
-    public AccountController(IConfiguration config,
-        ILogger<AccountController> logger)
+    public class AccountController : Controller
     {
-        _config = config;
-        _logger = logger;
-    }
+        private readonly IConfiguration _config;
+        private readonly ILogger<AccountController> _logger;
 
-    // ── GET /Account/Login ───────────────────────────────────────────────────
-    // [HttpGet] means: respond to GET requests (when browser navigates to URL)
-    [HttpGet]
-    public IActionResult Login()
-    {
-        // If already logged in, skip login page and go directly to claim form
-        if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Submit", "Claim");
-
-        return View(new LoginViewModel());
-    }
-
-    // ── POST /Account/Login ──────────────────────────────────────────────────
-    // [HttpPost] means: respond to POST requests (when form is submitted)
-    [HttpPost]
-    [ValidateAntiForgeryToken]  // ← SECURITY: Prevents Cross-Site Request Forgery attacks
-    public async Task<IActionResult> Login(LoginViewModel model)
-    {
-        // ModelState.IsValid checks all the [Required] and [StringLength] rules
-        if (!ModelState.IsValid)
-            return View(model);  // Return form with error messages shown
-
-        try
+        public AccountController(IConfiguration config, ILogger<AccountController> logger)
         {
-            // Look up the user in our database
-            var user = await GetUserFromDatabase(model.Username);
+            _config = config;
+            _logger = logger;
+        }
 
-            if (user == null)
+        // ── GET /Account/Login ──────────────────────────────────────────────
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Login(string? returnUrl = null)
+        {
+            // If already logged in, redirect to dashboard
+            if (User.Identity?.IsAuthenticated == true)
             {
-                // SECURITY TIP: Don't say "username not found" specifically
-                // That tells attackers which usernames exist!
-                // Always say "invalid username or password"
-                _logger.LogWarning(
-                    "Login attempt with unknown username: {Username}", model.Username);
-                model.ErrorMessage = "Invalid username or password.";
-                return View(model);
+                if (User.IsInRole("Admin"))
+                    return RedirectToAction("Dashboard", "Admin");
+                else
+                    return RedirectToAction("MyClaims", "MyAccount");
             }
 
-            if (!user.IsActive)
+            ViewData["ReturnUrl"] = returnUrl;
+            return View(new LoginViewModel());
+        }
+
+        // ── POST /Account/Login ─────────────────────────────────────────────
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        {
+            try
             {
-                model.ErrorMessage = "Your account has been disabled. Contact admin.";
-                return View(model);
-            }
-
-            // BCrypt.Verify: Compare the typed password against the stored hash
-            // Returns true if they match, false if not
-            // This is SAFE because BCrypt is a one-way function!
-            if (!BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
-            {
-                _logger.LogWarning(
-                    "Failed login attempt for username: {Username}", model.Username);
-                model.ErrorMessage = "Invalid username or password.";
-                return View(model);
-            }
-
-            // ── CREATE LOGIN SESSION ─────────────────────────────────────
-            // "Claims" here are pieces of information about the logged-in user
-            // (not medical claims! "Claim" is overloaded terminology)
-            var authClaims = new List<System.Security.Claims.Claim>
-            {
-                new(ClaimTypes.Name,       user.Username),
-                new(ClaimTypes.Role,       user.Role),
-                new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new("LoginTime",           DateTime.UtcNow.ToString("O"))
-            };
-
-            var identity = new ClaimsIdentity(authClaims,
-                CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            // Sign in: creates the cookie and sends it to the browser
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                new AuthenticationProperties
+                if (!ModelState.IsValid)
                 {
-                    IsPersistent = false,  // Don't remember after browser closes
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
-                });
+                    model.ErrorMessage = "Invalid login attempt.";
+                    return View(model);
+                }
 
-            // Write to audit trail
-            await WriteAudit(null, "USER_LOGIN", user.Username,
-                $"Successful login from IP: {GetClientIp()}");
+                _logger.LogInformation("Login attempt for user: {Username}", model.Username);
 
-            _logger.LogInformation("User {Username} logged in successfully.", user.Username);
+                // Query database for user
+                var user = await GetUserFromDatabase(model.Username);
 
-            // Redirect to claim submission form
-            return RedirectToAction("Submit", "Claim");
+                if (user == null)
+                {
+                    _logger.LogWarning("Login attempt with unknown username: {Username}", model.Username);
+                    model.ErrorMessage = "Invalid username or password.";
+                    return View(model);
+                }
+
+                _logger.LogInformation("User found in database: {Username}", model.Username);
+
+                if (!user.IsActive)
+                {
+                    _logger.LogWarning("Login attempt on inactive account: {Username}", model.Username);
+                    model.ErrorMessage = "Your account has been disabled. Please contact support.";
+                    return View(model);
+                }
+
+                _logger.LogInformation("Verifying password for: {Username}", model.Username);
+
+                // Verify password using BCrypt
+                bool passwordValid = BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash);
+                _logger.LogInformation("Password valid: {Valid}", passwordValid);
+
+                if (!passwordValid)
+                {
+                    _logger.LogWarning("Failed login attempt for user: {Username}", model.Username);
+                    model.ErrorMessage = "Invalid username or password.";
+                    return View(model);
+                }
+
+                _logger.LogInformation("Authentication successful for: {Username}", model.Username);
+
+                // ── Create authentication claims ────────────────────────────
+                var authClaims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Role, user.Role),
+                    new Claim("LoginTime", DateTime.UtcNow.ToString("O"))
+                };
+
+                var claimsIdentity = new ClaimsIdentity(
+                    authClaims,
+                    CookieAuthenticationDefaults.AuthenticationScheme);
+
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = model.RememberMe,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30),
+                    IssuedUtc = DateTimeOffset.UtcNow,
+                    AllowRefresh = true
+                };
+
+                // Sign in user
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
+                // Write audit trail
+                await WriteAudit(null, "USER_LOGIN", user.Username,
+                    $"Successful login from IP: {GetClientIp()}");
+
+                _logger.LogInformation("User {Username} logged in successfully. Role: {Role}", user.Username, user.Role);
+
+                // Redirect based on role
+                if (user.Role == "Admin")
+                    return RedirectToAction("Dashboard", "Admin");
+                else
+                    return RedirectToAction("MyClaims", "MyAccount");
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "Database error during login for {Username}", model.Username);
+                model.ErrorMessage = "A database error occurred. Please try again later.";
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during login for {Username}", model.Username);
+                model.ErrorMessage = "An unexpected error occurred. Please try again.";
+                return View(model);
+            }
         }
-        catch (Exception ex)
+
+        // ── GET /Account/Logout ─────────────────────────────────────────────
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Logout()
         {
-            _logger.LogError(ex, "Error during login for {Username}", model.Username);
-            model.ErrorMessage = "A system error occurred. Please try again.";
-            return View(model);
+            var username = User.Identity?.Name ?? "Unknown";
+
+            try
+            {
+                await WriteAudit(null, "USER_LOGOUT", username, "User logged out");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error writing logout audit trail");
+            }
+
+            _logger.LogInformation("User {Username} logged out.", username);
+
+            // Sign out and clear authentication cookie
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return RedirectToAction("Login");
         }
-    }
 
-    // ── GET /Account/Logout ──────────────────────────────────────────────────
-    [HttpGet]
-    public async Task<IActionResult> Logout()
-    {
-        var username = User.Identity?.Name ?? "Unknown";
-
-        // Sign out: clears the cookie from browser
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        await WriteAudit(null, "USER_LOGOUT", username, "User logged out");
-        _logger.LogInformation("User {Username} logged out.", username);
-
-        return RedirectToAction("Login");
-    }
-
-    // ── PRIVATE HELPER METHODS ───────────────────────────────────────────────
-
-    // A simple User record (no need for a separate class file for this)
-    private record UserRecord(int UserId, string Username,
-        string PasswordHash, string Role, bool IsActive);
-
-    private async Task<UserRecord?> GetUserFromDatabase(string username)
-    {
-        var connStr = _config.GetConnectionString("ClaimsDB")!;
-        const string sql = @"
-            SELECT UserId, Username, PasswordHash, Role, IsActive
-            FROM   Users
-            WHERE  Username = @Username";
-
-        await using var conn = new SqlConnection(connStr);
-        await conn.OpenAsync();
-        await using var cmd = new SqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("@Username", username);  // Parameterized = safe!
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        if (!await reader.ReadAsync())
-            return null;
-
-        return new UserRecord(
-            UserId: reader.GetInt32(0),
-            Username: reader.GetString(1),
-            PasswordHash: reader.GetString(2),
-            Role: reader.GetString(3),
-            IsActive: reader.GetBoolean(4)
-        );
-    }
-
-    private async Task WriteAudit(string? claimId, string action,
-        string performedBy, string details)
-    {
-        try
+        // ── GET /Account/AccessDenied ───────────────────────────────────────
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult AccessDenied()
         {
-            var connStr = _config.GetConnectionString("ClaimsDB")!;
+            return View();
+        }
+
+        // ── PRIVATE HELPER METHODS ──────────────────────────────────────────
+
+        private record UserRecord(
+            int UserId,
+            string Username,
+            string PasswordHash,
+            string Role,
+            bool IsActive);
+
+        private async Task<UserRecord?> GetUserFromDatabase(string username)
+        {
+            var connStr = _config.GetConnectionString("ClaimsDB");
+
+            if (string.IsNullOrEmpty(connStr))
+            {
+                _logger.LogError("Connection string 'ClaimsDB' not found in configuration");
+                throw new InvalidOperationException("Connection string 'ClaimsDB' not found.");
+            }
+
+            _logger.LogInformation("Querying database for user: {Username}", username);
+
             const string sql = @"
-                INSERT INTO AuditTrail (ClaimId, Action, PerformedBy, IPAddress, Details)
-                VALUES (@ClaimId, @Action, @PerformedBy, @IPAddress, @Details)";
+                SELECT UserId, Username, PasswordHash, Role, IsActive
+                FROM Users
+                WHERE Username = @Username";
 
             await using var conn = new SqlConnection(connStr);
             await conn.OpenAsync();
+
             await using var cmd = new SqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@ClaimId", (object?)claimId ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@Action", action);
-            cmd.Parameters.AddWithValue("@PerformedBy", performedBy);
-            cmd.Parameters.AddWithValue("@IPAddress", GetClientIp());
-            cmd.Parameters.AddWithValue("@Details", details);
-            await cmd.ExecuteNonQueryAsync();
+            cmd.Parameters.AddWithValue("@Username", username);
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            if (!await reader.ReadAsync())
+            {
+                _logger.LogWarning("User not found in database: {Username}", username);
+                return null;
+            }
+
+            var record = new UserRecord(
+                UserId: reader.GetInt32(0),
+                Username: reader.GetString(1),
+                PasswordHash: reader.GetString(2),
+                Role: reader.GetString(3),
+                IsActive: reader.GetBoolean(4)
+            );
+
+            _logger.LogInformation("User record retrieved: {Username}, Role: {Role}, Active: {Active}",
+                record.Username, record.Role, record.IsActive);
+
+            return record;
         }
-        catch (Exception ex)
+
+        private async Task WriteAudit(string? claimId, string action,
+            string performedBy, string details)
         {
-            // Audit failure should NOT break the login flow
-            _logger.LogError(ex, "Failed to write audit trail.");
+            try
+            {
+                var connStr = _config.GetConnectionString("ClaimsDB");
+
+                if (string.IsNullOrEmpty(connStr))
+                {
+                    _logger.LogError("Connection string not found for audit trail");
+                    return;
+                }
+
+                const string sql = @"
+                    INSERT INTO AuditTrail (ClaimId, Action, PerformedBy, IPAddress, Details, CreatedAt)
+                    VALUES (@ClaimId, @Action, @PerformedBy, @IPAddress, @Details, GETUTCDATE())";
+
+                await using var conn = new SqlConnection(connStr);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@ClaimId", (object?)claimId ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@Action", action);
+                cmd.Parameters.AddWithValue("@PerformedBy", performedBy);
+                cmd.Parameters.AddWithValue("@IPAddress", GetClientIp());
+                cmd.Parameters.AddWithValue("@Details", details);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to write audit trail for action: {Action}", action);
+                // Don't throw - audit failure shouldn't break login flow
+            }
+        }
+
+        private string GetClientIp()
+        {
+            return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         }
     }
-
-    private string GetClientIp() =>
-        HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
 }

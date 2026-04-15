@@ -1,148 +1,527 @@
-﻿@* ============================================================
-   FILE: ClaimIntake.Web/Views/Admin/RegisterUser.cshtml
-   PURPOSE: Admin form to register new users
-   ============================================================ *@
-
-@model ClaimIntake.Web.Models.AdminUserRegisterViewModel
+﻿@model ClaimIntake.Web.Models.AdminUserRegisterViewModel
 @{
     ViewData["Title"] = "Register New User";
 }
 
-<div class="register-container">
-    <div class="register-card">
-        <div class="register-header">
-            <h1 class="register-title">Register New User</h1>
-            <p class="register-subtitle">Add a new user to the system</p>
+<style>
+.reg-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+@@media (max-width: 860px) {
+    .reg-layout { grid-template-columns: 1fr; }
+    .reg-sidebar { order: -1; }
+}
+
+.strength-bar-wrap {
+    height: 5px;
+    background: var(--surface-100);
+    border-radius: var(--r-full);
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.strength-bar {
+    height: 100%;
+    border-radius: var(--r-full);
+    transition: width 300ms ease, background 300ms ease;
+    width: 0%;
+}
+
+.strength-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--surface-400);
+}
+
+.pwd-rules { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+
+.pwd-rule {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--surface-400);
+    transition: color 200ms;
+}
+
+.pwd-rule.ok   { color: var(--success-solid); }
+.pwd-rule.fail { color: var(--error-solid); }
+
+.rule-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    transition: all 200ms;
+}
+
+.pwd-rule.ok .rule-icon {
+    background: var(--success-solid);
+    border-color: var(--success-solid);
+    color: white;
+}
+
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.role-card {
+    border: 2px solid var(--surface-200);
+    border-radius: var(--r-lg);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 200ms;
+    position: relative;
+}
+
+.role-card:hover    { border-color: var(--brand-400); background: var(--brand-50); }
+.role-card.selected { border-color: var(--brand-600); background: var(--brand-50); }
+
+.role-check {
+    display: none;
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 20px; height: 20px;
+    background: var(--brand-600);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.role-card.selected .role-check { display: flex; }
+
+.role-icon-box {
+    width: 40px; height: 40px;
+    border-radius: var(--r-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.role-icon-box.user-box  { background: var(--surface-100); color: var(--surface-600); }
+.role-icon-box.admin-box { background: var(--brand-50);    color: var(--brand-600);   }
+
+.role-name { font-size: 14px; font-weight: 700; color: var(--surface-900); margin-bottom: 4px; }
+.role-desc { font-size: 12px; color: var(--surface-500); line-height: 1.4; }
+
+.field-ok   { border-color: var(--success-solid) !important; }
+.field-fail { border-color: var(--error-solid)   !important; }
+
+.field-feedback {
+    font-size: 12px;
+    margin-top: 5px;
+    min-height: 18px;
+}
+.field-feedback.ok   { color: var(--success-solid); }
+.field-feedback.fail { color: var(--error-solid); }
+
+.steps { display: flex; flex-direction: column; }
+
+.step-item {
+    display: flex;
+    gap: 14px;
+    padding-bottom: 24px;
+    position: relative;
+}
+
+.step-item:last-child { padding-bottom: 0; }
+
+.step-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 14px; top: 28px; bottom: 0;
+    width: 1px;
+    background: var(--surface-200);
+}
+
+.step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface-100);
+    border: 2px solid var(--surface-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--surface-500);
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.step-num.done   { background: var(--success-solid); border-color: var(--success-solid); color: white; }
+.step-num.active { background: var(--brand-600);     border-color: var(--brand-600);     color: white; }
+
+.step-body h4 { font-size: 13px; font-weight: 700; color: var(--surface-900); margin-bottom: 2px; padding-top: 4px; }
+.step-body p  { font-size: 12px; color: var(--surface-500); line-height: 1.5; }
+
+.pwr-btn {
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--surface-400);
+    cursor: pointer; padding: 4px;
+    display: flex;
+}
+</style>
+
+<div style="max-width:1100px;margin:0 auto;">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Register New User</h1>
+            <p class="page-subtitle">Create an account and set their access level</p>
+        </div>
+        <div class="page-actions">
+            <a href="/Admin/UserManagement" class="btn btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to Users
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-error" style="margin-bottom:20px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div class="reg-layout">
+
+        <!-- MAIN FORM -->
+        <div>
+            <form asp-action="RegisterUser" asp-controller="Admin" method="post"
+                  id="regForm" novalidate autocomplete="off">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Role" id="roleInput" value="User" />
+
+                <!-- Identity -->
+                <div class="card card-padded" style="margin-bottom:20px;">
+                    <div style="font-size:13px;font-weight:700;color:var(--brand-600);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:20px;">Identity</div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div class="form-group">
+                            <label for="FullName" class="form-label">Full Name <span style="color:var(--error-solid)">*</span></label>
+                            <input type="text" name="FullName" id="FullName"
+                                   class="form-control" placeholder="e.g. Alice Johnson"
+                                   maxlength="200" oninput="validateFullName(this)"
+                                   value="@(Model.FullName ?? string.Empty)" />
+                            <div class="field-feedback" id="fb-fullname"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Username" class="form-label">Username <span style="color:var(--error-solid)">*</span></label>
+                            <input asp-for="Username" class="form-control"
+                                   placeholder="e.g. alice.johnson"
+                                   maxlength="100" oninput="validateUsername(this)"
+                                   autocomplete="new-password" />
+                            <div class="field-feedback" id="fb-username"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label asp-for="Email" class="form-label">Email Address <span style="color:var(--error-solid)">*</span></label>
+                        <div style="position:relative;">
+                            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--surface-400);pointer-events:none;"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                            <input asp-for="Email" type="email" class="form-control"
+                                   placeholder="alice@example.com"
+                                   style="padding-left:38px;"
+                                   oninput="validateEmail(this)"
+                                   autocomplete="new-password" />
+                        </div>
+                        <div class="field-feedback" id="fb-email"></div>
+                        <span asp-validation-for="Email" class="form-error"></span>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="form-group">
+                            <label for="Department" class="form-label">Department</label>
+                            <select name="Department" id="Department" class="form-control">
+                                <option value="">-- Select department --</option>
+                                @{
+                                    var departments = new[] { "Claims","Finance","Management","IT","Operations","HR","Legal","Audit" };
+                                    foreach (var d in departments)
+                                    {
+                                        if (Model.Department == d)
+                                        {
+                                            <option value="@d" selected="selected">@d</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@d">@d</option>
+                                        }
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="PhoneNumber" class="form-label">Phone Number</label>
+                            <input type="tel" name="PhoneNumber" id="PhoneNumber"
+                                   class="form-control" placeholder="+1 (555) 000-0000"
+                                   maxlength="20" value="@(Model.PhoneNumber ?? string.Empty)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Access Level -->
+                <div class="card card-padded" style="margin-bottom:20px;">
+                    <div style="font-size:13px;font-weight:700;color:var(--brand-600);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:16px;">Access Level</div>
+                    <div class="role-grid">
+                        <div class="role-card selected" id="card-User" onclick="selectRole('User')">
+                            <div class="role-check">&#10003;</div>
+                            <div class="role-icon-box user-box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            </div>
+                            <div class="role-name">User</div>
+                            <div class="role-desc">Submit and track own claims only. No admin access.</div>
+                        </div>
+                        <div class="role-card" id="card-Admin" onclick="selectRole('Admin')">
+                            <div class="role-check">&#10003;</div>
+                            <div class="role-icon-box admin-box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            </div>
+                            <div class="role-name">Admin</div>
+                            <div class="role-desc">Full access: manage all claims, users, and system settings.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security -->
+                <div class="card card-padded" style="margin-bottom:24px;">
+                    <div style="font-size:13px;font-weight:700;color:var(--brand-600);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:20px;">Security</div>
+
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label asp-for="Password" class="form-label">Password <span style="color:var(--error-solid)">*</span></label>
+                        <div style="position:relative;">
+                            <input asp-for="Password" type="password" id="pwdMain"
+                                   class="form-control" placeholder="Create a strong password"
+                                   style="padding-right:44px;"
+                                   oninput="onPasswordInput(this)"
+                                   autocomplete="new-password" />
+                            <button type="button" class="pwr-btn" onclick="toggleField('pwdMain','eyeMain')">
+                                <svg id="eyeMain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="strength-bar-wrap"><div class="strength-bar" id="strengthBar"></div></div>
+                        <div class="strength-label">
+                            <span id="strengthText"></span><span>Strength</span>
+                        </div>
+
+                        <div class="pwd-rules">
+                            <div class="pwd-rule" id="rule-len"><div class="rule-icon">&#10003;</div> At least 8 characters</div>
+                            <div class="pwd-rule" id="rule-upper"><div class="rule-icon">&#10003;</div> One uppercase letter (A-Z)</div>
+                            <div class="pwd-rule" id="rule-lower"><div class="rule-icon">&#10003;</div> One lowercase letter (a-z)</div>
+                            <div class="pwd-rule" id="rule-num"><div class="rule-icon">&#10003;</div> One number (0-9)</div>
+                            <div class="pwd-rule" id="rule-special"><div class="rule-icon">&#10003;</div> One special character (@@$!%*?&amp;)</div>
+                        </div>
+                        <span asp-validation-for="Password" class="form-error"></span>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <label asp-for="ConfirmPassword" class="form-label">Confirm Password <span style="color:var(--error-solid)">*</span></label>
+                        <div style="position:relative;">
+                            <input asp-for="ConfirmPassword" type="password" id="pwdConfirm"
+                                   class="form-control" placeholder="Repeat your password"
+                                   style="padding-right:44px;"
+                                   oninput="onConfirmInput(this)"
+                                   autocomplete="new-password" />
+                            <button type="button" class="pwr-btn" onclick="toggleField('pwdConfirm','eyeConfirm')">
+                                <svg id="eyeConfirm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="field-feedback" id="fb-confirm"></div>
+                        <span asp-validation-for="ConfirmPassword" class="form-error"></span>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-50);border-radius:var(--r-lg);border:1px solid var(--surface-200);">
+                        <input type="checkbox" name="SendWelcomeEmail" value="true" id="sendEmailChk"
+                               checked="checked"
+                               style="width:18px;height:18px;cursor:pointer;accent-color:var(--brand-600);" />
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:var(--surface-800);">Send welcome email</div>
+                            <div style="font-size:12px;color:var(--surface-500);">Notify the user with their login details</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" style="min-width:180px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                        <span id="btnLabel">Register User</span>
+                    </button>
+                    <a href="/Admin/UserManagement" class="btn btn-ghost">Cancel</a>
+                </div>
+            </form>
         </div>
 
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <div class="alert alert-error">
-                <span class="alert-icon">⚠</span>
-                @Model.ErrorMessage
-            </div>
-        }
-
-        <form asp-action="RegisterUser" asp-controller="Admin" method="post" novalidate>
-            @Html.AntiForgeryToken()
-
-            <!-- Username Field -->
-            <div class="form-group">
-                <label asp-for="Username" class="form-label required">Username</label>
-                <input asp-for="Username" class="form-control" 
-                       placeholder="e.g., john.doe" maxlength="100" />
-                <span class="field-hint">3-100 characters. Letters, numbers, dots, hyphens, underscores.</span>
-                <span asp-validation-for="Username" class="field-error"></span>
-            </div>
-
-            <!-- Password Field -->
-            <div class="form-group">
-                <label asp-for="Password" class="form-label required">Password</label>
-                <input asp-for="Password" class="form-control" type="password"
-                       placeholder="Must be strong" />
-                <span class="field-hint">
-                    Minimum 8 characters. Must include:
-                    <br/>✓ Uppercase letter (A-Z)
-                    <br/>✓ Lowercase letter (a-z)
-                    <br/>✓ Number (0-9)
-                    <br/>✓ Special character ($!%*?&)
-                </span>
-                <span asp-validation-for="Password" class="field-error"></span>
+        <!-- SIDEBAR -->
+        <div class="reg-sidebar">
+            <div class="card card-padded" style="margin-bottom:16px;">
+                <div style="font-size:13px;font-weight:700;color:var(--surface-700);margin-bottom:16px;">Setup Checklist</div>
+                <div class="steps">
+                    <div class="step-item">
+                        <div class="step-num active" id="step1-num">1</div>
+                        <div class="step-body"><h4>Identity</h4><p>Full name, username, email, department</p></div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num" id="step2-num">2</div>
+                        <div class="step-body"><h4>Access level</h4><p>User (limited) or Admin (full access)</p></div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num" id="step3-num">3</div>
+                        <div class="step-body"><h4>Security</h4><p>Strong password meeting all requirements</p></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Confirm Password -->
-            <div class="form-group">
-                <label asp-for="ConfirmPassword" class="form-label required">Confirm Password</label>
-                <input asp-for="ConfirmPassword" class="form-control" type="password"
-                       placeholder="Re-enter password" />
-                <span asp-validation-for="ConfirmPassword" class="field-error"></span>
+            <div class="card card-padded" style="margin-bottom:16px;">
+                <div style="font-size:13px;font-weight:700;color:var(--surface-700);margin-bottom:14px;">Role Permissions</div>
+                <div id="permSummary"></div>
             </div>
 
-            <!-- Role Selection -->
-            <div class="form-group">
-                <label asp-for="Role" class="form-label required">User Role</label>
-                <select asp-for="Role" class="form-control">
-                    <option value="User">👤 User (Regular user - can submit claims)</option>
-                    <option value="Admin">🔑 Admin (Full system access)</option>
-                </select>
-                <span class="field-hint">
-                    <strong>User:</strong> Can submit and view their own claims.<br/>
-                    <strong>Admin:</strong> Can manage users, view all claims, update statuses.
-                </span>
+            <div style="background:var(--brand-50);border:1px solid var(--brand-200);border-radius:var(--r-lg);padding:16px;">
+                <div style="font-size:12px;font-weight:700;color:var(--brand-700);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Tips</div>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
+                    <li style="font-size:12px;color:var(--brand-800);">&#8226; Username must be unique across the system</li>
+                    <li style="font-size:12px;color:var(--brand-800);">&#8226; Email must be unique — used for notifications</li>
+                    <li style="font-size:12px;color:var(--brand-800);">&#8226; Passwords hashed with BCrypt — never stored plain</li>
+                    <li style="font-size:12px;color:var(--brand-800);">&#8226; Admins can be deactivated but not deleted</li>
+                </ul>
             </div>
-
-            <!-- Actions -->
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    ✓ Register User
-                </button>
-                <a href="/Admin/UserManagement" class="btn btn-ghost">
-                    ← Back
-                </a>
-            </div>
-
-            <p class="form-note">
-                This user will be able to log in immediately after registration.
-                They will receive no automatic email notification - you'll need to
-                inform them of their credentials separately.
-            </p>
-        </form>
+        </div>
     </div>
 </div>
 
-<style>
-.register-container {
-    max-width: 500px;
-    margin: 0 auto;
-    padding: var(--space-xl) var(--space-lg);
+<script>
+var perms = {
+    User:  ['Submit new claims','View own claims only','Track claim status','Download claim receipts'],
+    Admin: ['All User permissions','View ALL claims','Update claim status','Manage users','Access audit trail','Export reports']
+};
+
+function selectRole(role) {
+    document.getElementById('roleInput').value = role;
+    var roles = ['User','Admin'];
+    for (var i = 0; i < roles.length; i++) {
+        var el = document.getElementById('card-' + roles[i]);
+        if (roles[i] === role) { el.classList.add('selected'); }
+        else                   { el.classList.remove('selected'); }
+    }
+    renderPerms(role);
 }
 
-.register-card {
-    background: var(--color-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
-    box-shadow: var(--shadow-md);
+function renderPerms(role) {
+    var list = perms[role];
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+        html += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--surface-600);padding:6px 0;border-bottom:1px solid var(--surface-100);">'
+              + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;color:var(--success-solid);flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>'
+              + list[i] + '</div>';
+    }
+    document.getElementById('permSummary').innerHTML = html;
 }
 
-.register-header {
-    margin-bottom: var(--space-lg);
-    padding-bottom: var(--space-lg);
-    border-bottom: 2px solid var(--color-border);
+renderPerms('User');
+
+var rules = [
+    { re: /.{8,}/,          id: 'rule-len'     },
+    { re: /[A-Z]/,          id: 'rule-upper'   },
+    { re: /[a-z]/,          id: 'rule-lower'   },
+    { re: /[0-9]/,          id: 'rule-num'     },
+    { re: /[@@$!%*?&\-_#^]/, id: 'rule-special' }
+];
+
+function validateEmail(el) {
+    var v  = el.value.trim();
+    var ok = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(v);
+    showFb(el, 'fb-email', ok || !v, ok ? 'Valid email address' : 'Enter a valid email address');
+    updateChecklist();
 }
 
-.register-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--color-text);
-    margin: 0;
+function updateChecklist() {
+    var fName   = document.getElementById('FullName').value.trim().length >= 2;
+    var uName   = /^[a-zA-Z0-9_.\-]{3,100}$/.test(document.getElementById('Username').value.trim());
+    var email   = /^[^\s@@]+@@[^\s@@]+\\.[^\\s@@]+$/.test(document.getElementById('Email').value.trim());
+    var step1ok = fName && uName && email;
+
+    var pwd     = document.getElementById('pwdMain').value;
+    var allOk   = true;
+    for (var i = 0; i < rules.length; i++) { if (!rules[i].re.test(pwd)) { allOk = false; break; } }
+    var match   = pwd.length > 0 && pwd === document.getElementById('pwdConfirm').value;
+    var step3ok = allOk && match;
+
+    setStep('step1-num', step1ok ? 'done' : 'active');
+    setStep('step2-num', step1ok ? 'done' : '');
+    setStep('step3-num', step1ok && step3ok ? 'done' : step1ok ? 'active' : '');
 }
 
-.register-subtitle {
-    font-size: 14px;
-    color: var(--color-text-muted);
-    margin: 4px 0 0 0;
+function setStep(id, state) {
+    var el = document.getElementById(id);
+    el.className = 'step-num' + (state ? ' ' + state : '');
 }
 
-.field-hint {
-    font-size: 12px;
-    color: var(--color-text-muted);
-    line-height: 1.5;
+function toggleField(inputId, iconId) {
+    var input = document.getElementById(inputId);
+    var icon  = document.getElementById(iconId);
+    if (input.type === 'password') {
+        input.type    = 'text';
+        icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    } else {
+        input.type    = 'password';
+        icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
 }
 
-.form-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: var(--space-lg);
-}
+document.getElementById('regForm').addEventListener('submit', function(e) {
+    var errors = [];
+    var pwd    = document.getElementById('pwdMain').value;
+    var conf   = document.getElementById('pwdConfirm').value;
+    var email  = document.getElementById('Email').value.trim();
+    var name   = document.getElementById('FullName').value.trim();
+    var uname  = document.getElementById('Username').value.trim();
 
-.form-note {
-    font-size: 13px;
-    color: var(--color-text-muted);
-    background: #f9fafb;
-    padding: var(--space-md);
-    border-radius: var(--radius-sm);
-    border-left: 3px solid var(--color-primary);
-    margin-top: var(--space-lg);
-}
-</style>
+    if (!name  || name.length  < 2)                                     errors.push('Full name is required.');
+    if (!uname || !/^[a-zA-Z0-9_.\-]{3,100}$/.test(uname))             errors.push('Valid username is required.');
+    if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email)) errors.push('Valid email is required.');
+    for (var i = 0; i < rules.length; i++) {
+        if (!rules[i].re.test(pwd)) { errors.push('Password does not meet all requirements.'); break; }
+    }
+    if (pwd !== conf) errors.push('Passwords do not match.');
+
+    if (errors.length) {
+        e.preventDefault();
+        alert(errors.join('\n'));
+        return;
+    }
+
+    document.getElementById('submitBtn').disabled    = true;
+    document.getElementById('btnLabel').textContent  = 'Creating account...';
+});
+</script>

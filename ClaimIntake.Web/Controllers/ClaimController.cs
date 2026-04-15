@@ -26,7 +26,7 @@ namespace ClaimIntake.Web.Controllers;
 // requires the user to be logged in. If not logged in,
 // they get redirected to /Account/Login automatically.
 [Authorize]
-public class ClaimController : Controller
+public class ClaimController : BaseController
 {
     private readonly IConfiguration _config;
     private readonly ILogger<ClaimController> _logger;
@@ -34,7 +34,7 @@ public class ClaimController : Controller
 
     public ClaimController(IConfiguration config,
         ILogger<ClaimController> logger,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory) : base(config)
     {
         _config = config;
         _logger = logger;

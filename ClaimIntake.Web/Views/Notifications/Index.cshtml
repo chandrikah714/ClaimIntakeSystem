@@ -1,0 +1,40 @@
+﻿@model List<ClaimIntake.Web.Models.NotificationViewModel>
+@{
+    ViewData["Title"] = "All Notifications";
+}
+<div style="max-width:800px;margin:0 auto;">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Notifications</h1>
+            <p class="page-subtitle">@Model.Count(n => !n.IsRead) unread</p>
+        </div>
+        <button class="btn btn-secondary" onclick="fetch('/Notifications/MarkAllRead',{method:'POST'}).then(()=>location.reload())">
+            Mark all read
+        </button>
+    </div>
+    <div class="card" style="overflow:hidden;">
+        @foreach (var n in Model)
+        {
+            <a href="@(n.ActionUrl ?? "#")"
+                   class="notif-item @(n.IsRead ? "" : "unread")"
+                   style="display:flex;gap:16px;padding:16px 20px;border-bottom:1px solid var(--surface-100);text-decoration:none;color:inherit;"
+                   onclick="fetch('/Notifications/MarkRead/@n.NotificationId',{method:'POST'})">
+                <div class="notif-icon @n.TypeClass">@n.TypeIcon</div>
+                <div style="flex:1">
+                    <div class="notif-title">@n.Title</div>
+                    <div class="notif-msg">@n.Message</div>
+                    <div class="notif-time">@n.TimeAgo</div>
+                </div>
+                <div class="notif-dot @(n.IsRead ? "read" : "unread")"></div>
+            </a>
+        }
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">🔔</div>
+                <div class="empty-title">No notifications</div>
+                <div class="empty-text">You're all caught up!</div>
+            </div>
+        }
+    </div>
+</div>

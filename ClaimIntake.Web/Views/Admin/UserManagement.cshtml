@@ -1,169 +1,458 @@
 ﻿@* ============================================================
    FILE: ClaimIntake.Web/Views/Admin/UserManagement.cshtml
-   PURPOSE: List and manage user accounts
+   FIXES: @@media, onclick uses data attributes not inline Razor,
+          no duplicate style attributes
    ============================================================ *@
 
 @model List<ClaimIntake.Web.Models.UserViewModel>
 @{
     ViewData["Title"] = "User Management";
+    var activeCount  = Model.Count(u => u.IsActive);
+    var adminCount   = Model.Count(u => u.Role == "Admin");
 }
 
-<div class="user-management-container">
-    <!-- Page Header -->
+<style>
+.filter-chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--r-full);
+    font-size: 12px;
+    font-weight: 600;
+    border: 1.5px solid var(--surface-200);
+    background: var(--surface-0);
+    color: var(--surface-600);
+    cursor: pointer;
+    transition: all 180ms;
+    text-decoration: none;
+}
+
+.chip:hover       { border-color: var(--brand-400); color: var(--brand-600); }
+.chip.active      { background: var(--brand-600); border-color: var(--brand-600); color: white; }
+.chip .chip-count { font-size: 11px; opacity: 0.75; }
+
+.user-avatar-sm {
+    width: 36px; height: 36px;
+    border-radius: var(--r-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.user-info-cell { display: flex; align-items: center; gap: 12px; }
+.u-name  { font-size: 14px; font-weight: 600; color: var(--surface-900); }
+.u-email { font-size: 12px; color: var(--surface-400); font-family: var(--font-mono); margin-top: 1px; }
+
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,0.55);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 200ms, visibility 200ms;
+}
+
+.modal-overlay.open { opacity: 1; visibility: visible; }
+
+.modal-box {
+    background: var(--surface-0);
+    border-radius: var(--r-xl);
+    box-shadow: 0 20px 50px rgba(15,23,42,0.25);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 200ms;
+}
+
+.modal-overlay.open .modal-box { transform: translateY(0); }
+
+.modal-hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--surface-100);
+}
+
+.modal-hdr-title { font-size: 16px; font-weight: 700; color: var(--surface-900); }
+
+.modal-close-btn {
+    width: 32px; height: 32px;
+    border-radius: var(--r-md);
+    border: none; background: transparent;
+    color: var(--surface-400);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 150ms;
+}
+
+.modal-close-btn:hover { background: var(--surface-100); color: var(--surface-700); }
+
+.modal-bdy  { padding: 24px; }
+.modal-ftr  { padding: 16px 24px; border-top: 1px solid var(--surface-100); display: flex; gap: 10px; justify-content: flex-end; }
+</style>
+
+<div style="max-width:1200px;margin:0 auto;">
+
+    <!-- Header -->
     <div class="page-header">
         <div>
             <h1 class="page-title">User Management</h1>
-            <p class="page-subtitle">Manage user accounts and permissions</p>
+            <p class="page-subtitle">@Model.Count total users &middot; @activeCount active</p>
         </div>
-        <div class="header-actions">
+        <div class="page-actions">
             <a href="/Admin/RegisterUser" class="btn btn-primary">
-                ➕ Register New User
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add User
             </a>
-            <a href="/Admin/Dashboard" class="btn btn-outline">
-                ← Back to Dashboard
-            </a>
+            <a href="/Admin/Dashboard" class="btn btn-secondary">&#8592; Dashboard</a>
         </div>
     </div>
 
-    <!-- Users Table -->
-    <div class="table-container">
+    <!-- Filter + Search -->
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="filter-chips">
+            <button class="chip active" onclick="filterUsers('all', this)">All <span class="chip-count">(@Model.Count)</span></button>
+            <button class="chip" onclick="filterUsers('active', this)">Active <span class="chip-count">(@activeCount)</span></button>
+            <button class="chip" onclick="filterUsers('inactive', this)">Inactive <span class="chip-count">(@(Model.Count - activeCount))</span></button>
+            <button class="chip" onclick="filterUsers('admin', this)">Admins <span class="chip-count">(@adminCount)</span></button>
+            <button class="chip" onclick="filterUsers('user', this)">Users <span class="chip-count">(@(Model.Count - adminCount))</span></button>
+        </div>
+
+        <div style="margin-left:auto;position:relative;min-width:240px;">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--surface-400);pointer-events:none;"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="userSearch" class="form-control" style="padding-left:36px;"
+                   placeholder="Search name, email, username..."
+                   oninput="searchUsers(this.value)" />
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
         @if (Model.Any())
         {
-            <table class="users-table">
+            <table class="data-table" id="userTable">
                 <thead>
                     <tr>
-                        <th class="col-username">Username</th>
-                        <th class="col-role">Role</th>
-                        <th class="col-status">Status</th>
-                        <th class="col-created">Created</th>
-                        <th class="col-by">By</th>
-                        <th class="col-actions">Actions</th>
+                        <th>User</th>
+                        <th>Username</th>
+                        <th>Department</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var user in Model)
                     {
-                        <tr class="user-row">
-                            <td class="col-username">
-                                <strong>@user.Username</strong>
+                        var initials = string.IsNullOrEmpty(user.FullName)
+                            ? user.Username.Substring(0, 1).ToUpper()
+                            : string.Join("", user.FullName.Split(' ').Take(2).Select(w => w[0].ToString().ToUpper()));
+
+                        var avatarBg   = user.AvatarColor ?? "#2563eb";
+                        var safeName   = (user.FullName   ?? string.Empty).Replace("'", "\\'").Replace("\"", "&quot;");
+                        var safeEmail  = (user.Email      ?? string.Empty).Replace("'", "\\'").Replace("\"", "&quot;");
+                        var safeDept   = (user.Department ?? string.Empty).Replace("'", "\\'");
+
+                        <tr class="user-row"
+                            data-search="@((user.FullName + " " + user.Username + " " + user.Email).ToLower())"
+                            data-role="@user.Role.ToLower()"
+                            data-active="@user.IsActive.ToString().ToLower()">
+
+                            <td>
+                                <div class="user-info-cell">
+                                    <div class="user-avatar-sm" style="background:@avatarBg;">@initials</div>
+                                    <div>
+                                        <div class="u-name">@(user.FullName ?? user.Username)</div>
+                                        <div class="u-email">@(user.Email ?? "—")</div>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="col-role">
-                                <span class="role-badge role-@user.Role.ToLower()">
-                                    @(user.Role == "Admin" ? "🔑" : "👤") @user.Role
+
+                            <td><span class="claim-chip">@user.Username</span></td>
+
+                            <td>
+                                <span style="font-size:13px;color:var(--surface-500);">
+                                    @(user.Department ?? "—")
                                 </span>
                             </td>
-                            <td class="col-status">
-                                <span class="status-badge @user.StatusClass">
-                                    @user.StatusBadge
-                                </span>
-                            </td>
-                            <td class="col-created">
-                                @user.CreatedAt.ToString("MMM dd, yyyy")
-                            </td>
-                            <td class="col-by">
-                                @user.CreatedBy
-                            </td>
-                            <td class="col-actions">
-                                @if (user.IsActive)
+
+                            <td>
+                                @if (user.Role == "Admin")
                                 {
-                                    <button onclick="deactivateUser(@user.UserId)" class="btn btn-sm btn-ghost">
-                                        Deactivate
-                                    </button>
+                                    <span class="badge" style="background:var(--brand-50);color:var(--brand-700);border:1px solid var(--brand-200);">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                        Admin
+                                    </span>
                                 }
                                 else
                                 {
-                                    <span class="text-muted">Inactive</span>
+                                    <span class="badge" style="background:var(--surface-100);color:var(--surface-600);border:1px solid var(--surface-200);">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                        User
+                                    </span>
                                 }
+                            </td>
+
+                            <td>
+                                @if (user.IsActive)
+                                {
+                                    <span class="badge badge-approved"><span class="badge-dot"></span> Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-hold">
+                                        <span class="badge-dot" style="background:var(--surface-400);"></span> Inactive
+                                    </span>
+                                }
+                            </td>
+
+                            <td style="font-size:13px;color:var(--surface-500);white-space:nowrap;">
+                                @user.CreatedAt.ToString("MMM dd, yyyy")
+                            </td>
+
+                            <td>
+                                <div style="display:flex;gap:6px;">
+                                    <button class="btn btn-sm btn-secondary"
+                                            data-uid="@user.UserId"
+                                            data-uname="@user.Username"
+                                            data-fname="@safeName"
+                                            data-email="@safeEmail"
+                                            data-dept="@safeDept"
+                                            data-role="@user.Role"
+                                            onclick="openEditModal(this)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        Edit
+                                    </button>
+
+                                    @if (user.IsActive)
+                                    {
+                                        <button class="btn btn-sm btn-danger"
+                                                data-uid="@user.UserId"
+                                                data-uname="@user.Username"
+                                                onclick="deactivateUser(this)">
+                                            Deactivate
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-success"
+                                                data-uid="@user.UserId"
+                                                data-uname="@user.Username"
+                                                onclick="reactivateUser(this)">
+                                            Reactivate
+                                        </button>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
+
+            <div id="noResults" style="display:none;" class="empty-state">
+                <div class="empty-icon">&#128269;</div>
+                <div class="empty-title">No users found</div>
+                <div class="empty-text">Try a different search term.</div>
+            </div>
         }
         else
         {
             <div class="empty-state">
-                <div class="empty-icon">👥</div>
-                <h3 class="empty-title">No Users Found</h3>
-                <p class="empty-text">Register your first user to get started.</p>
-                <a href="/Admin/RegisterUser" class="btn btn-primary">
-                    ➕ Register User
-                </a>
+                <div class="empty-icon">&#128101;</div>
+                <div class="empty-title">No users yet</div>
+                <div class="empty-text">Register your first user to get started.</div>
+                <a href="/Admin/RegisterUser" class="btn btn-primary" style="margin-top:16px;">Add User</a>
             </div>
         }
     </div>
 </div>
 
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal" onclick="handleOverlayClick(event)">
+    <div class="modal-box">
+        <div class="modal-hdr">
+            <div class="modal-hdr-title">Edit User</div>
+            <button class="modal-close-btn" onclick="closeModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-bdy">
+            <input type="hidden" id="edit-userId" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="edit-fullName" class="form-control" placeholder="Full Name" maxlength="200" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="edit-username" class="form-control"
+                           disabled style="background:var(--surface-50);color:var(--surface-400);" />
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="edit-email" class="form-control" placeholder="user@example.com" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select id="edit-department" class="form-control">
+                        <option value="">-- None --</option>
+                        @foreach (var dept in new[] { "Claims","Finance","Management","IT","Operations","HR","Legal","Audit" })
+                        {
+                            <option value="@dept">@dept</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select id="edit-role" class="form-control">
+                        <option value="User">User</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+            </div>
+            <div style="background:var(--info-bg);border:1px solid var(--info-border);border-radius:var(--r-md);padding:12px;font-size:12px;color:var(--info-text);">
+                <strong>Note:</strong> Password resets require admin action via the ChangePassword page or database.
+            </div>
+        </div>
+        <div class="modal-ftr">
+            <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveEdit()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
-    function deactivateUser(userId) {
-        if (!confirm('Are you sure you want to deactivate this user?')) return;
-    
-        fetch(`/Admin/DeactivateUser/${userId}`, { method: 'POST' })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('User deactivated successfully.');
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            });
+function filterUsers(filter, btn) {
+    var chips = document.querySelectorAll('.chip');
+    for (var i = 0; i < chips.length; i++) { chips[i].classList.remove('active'); }
+    btn.classList.add('active');
+
+    var rows = document.querySelectorAll('.user-row');
+    for (var j = 0; j < rows.length; j++) {
+        var row    = rows[j];
+        var show   = true;
+        if (filter === 'active')   show = row.dataset.active === 'true';
+        if (filter === 'inactive') show = row.dataset.active === 'false';
+        if (filter === 'admin')    show = row.dataset.role   === 'admin';
+        if (filter === 'user')     show = row.dataset.role   === 'user';
+        row.style.display = show ? '' : 'none';
     }
+    checkEmpty();
+}
+
+function searchUsers(q) {
+    q = q.toLowerCase();
+    var rows = document.querySelectorAll('.user-row');
+    for (var i = 0; i < rows.length; i++) {
+        var haystack = rows[i].dataset.search || '';
+        rows[i].style.display = haystack.indexOf(q) >= 0 ? '' : 'none';
+    }
+    checkEmpty();
+}
+
+function checkEmpty() {
+    var visible  = 0;
+    var rows     = document.querySelectorAll('.user-row');
+    for (var i = 0; i < rows.length; i++) {
+        if (rows[i].style.display !== 'none') visible++;
+    }
+    var noRes = document.getElementById('noResults');
+    if (noRes) noRes.style.display = visible === 0 ? 'block' : 'none';
+}
+
+function openEditModal(btn) {
+    document.getElementById('edit-userId').value     = btn.dataset.uid;
+    document.getElementById('edit-username').value   = btn.dataset.uname;
+    document.getElementById('edit-fullName').value   = btn.dataset.fname;
+    document.getElementById('edit-email').value      = btn.dataset.email;
+    document.getElementById('edit-department').value = btn.dataset.dept;
+    document.getElementById('edit-role').value       = btn.dataset.role;
+    document.getElementById('editModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function handleOverlayClick(e) {
+    if (e.target === document.getElementById('editModal')) { closeModal(); }
+}
+
+function closeModal() {
+    document.getElementById('editModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function saveEdit() {
+    var body = new URLSearchParams();
+    body.append('userId',     document.getElementById('edit-userId').value);
+    body.append('fullName',   document.getElementById('edit-fullName').value);
+    body.append('email',      document.getElementById('edit-email').value);
+    body.append('department', document.getElementById('edit-department').value);
+    body.append('role',       document.getElementById('edit-role').value);
+
+    fetch('/Admin/UpdateUser', { method: 'POST', body: body })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                if (window.showToast) window.showToast('User Updated', 'Changes saved successfully.', 'success');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                if (window.showToast) window.showToast('Error', data.message || 'Could not save changes.', 'error');
+                else alert(data.message || 'Error saving changes.');
+            }
+        });
+}
+
+function deactivateUser(btn) {
+    var id   = btn.dataset.uid;
+    var name = btn.dataset.uname;
+    if (!confirm('Deactivate "' + name + '"? They will not be able to log in.')) return;
+    fetch('/Admin/DeactivateUser/' + id, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                if (window.showToast) window.showToast('Deactivated', name + ' has been deactivated.', 'warning');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                alert(data.message || 'Error.');
+            }
+        });
+}
+
+function reactivateUser(btn) {
+    var id   = btn.dataset.uid;
+    var name = btn.dataset.uname;
+    if (!confirm('Reactivate "' + name + '"?')) return;
+    fetch('/Admin/ReactivateUser/' + id, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                if (window.showToast) window.showToast('Reactivated', name + ' can now log in.', 'success');
+                setTimeout(function() { location.reload(); }, 1000);
+            } else {
+                alert(data.message || 'Error.');
+            }
+        });
+}
 </script>
-
-<style>
-    .user-management-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: var(--space-xl) var(--space-lg);
-    }
-
-    .users-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-    }
-
-        .users-table thead {
-            background: #f9fafb;
-            border-bottom: 2px solid var(--color-border);
-        }
-
-        .users-table th {
-            padding: 14px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 12px;
-            color: var(--color-text);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .users-table td {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-    .role-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 99px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .role-admin {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .role-user {
-        background: #ecfdf5;
-        color: #065f46;
-    }
-
-    .text-muted {
-        color: var(--color-text-muted);
-        font-size: 13px;
-    }
-</style>

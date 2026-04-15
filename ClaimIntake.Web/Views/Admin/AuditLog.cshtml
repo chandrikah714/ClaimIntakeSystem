@@ -1,0 +1,174 @@
+﻿@* ============================================================
+   FILE: ClaimIntake.Web/Views/Admin/AuditLog.cshtml
+   FIXES: CSS in proper style block, no inline C# in style attrs
+          that contain special chars, safe Razor expressions
+   ============================================================ *@
+
+@model List<ClaimIntake.Web.Models.AuditLogViewModel>
+@{
+    ViewData["Title"] = "Audit Log";
+    var currentPage   = ViewBag.CurrentPage as int? ?? 1;
+    var actionFilter  = ViewBag.ActionFilter as string ?? string.Empty;
+
+    var actionTypes = new[]
+    {
+        new { Label = "All",             Value = string.Empty           },
+        new { Label = "Logins",          Value = "USER_LOGIN"          },
+        new { Label = "Claim Updates",   Value = "CLAIM_STATUS_UPDATED"},
+        new { Label = "User Registered", Value = "USER_REGISTERED"     },
+        new { Label = "Password Changes",Value = "PASSWORD_CHANGED"    },
+        new { Label = "Exports",         Value = "CLAIMS_EXPORTED"     }
+    };
+}
+
+<style>
+.audit-pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: var(--r-sm);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+.audit-login    { background: var(--success-bg);  color: var(--success-text);  }
+.audit-logout   { background: var(--surface-100); color: var(--surface-600);   }
+.audit-claim    { background: var(--info-bg);     color: var(--info-text);     }
+.audit-user     { background: var(--warning-bg);  color: var(--warning-text);  }
+.audit-export   { background: #f5f3ff;            color: #5b21b6;              }
+.audit-password { background: var(--warning-bg);  color: var(--warning-text);  }
+.audit-default  { background: var(--surface-100); color: var(--surface-600);   }
+
+.details-td {
+    font-size: 12px;
+    color: var(--surface-500);
+    max-width: 280px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+
+<div style="max-width:1200px;margin:0 auto;">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Audit Log</h1>
+            <p class="page-subtitle">All system activity &mdash; last 50 records per page</p>
+        </div>
+        <div class="page-actions">
+            <a href="/Admin/ExportClaims" class="btn btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export Claims
+            </a>
+            <a href="/Admin/Dashboard" class="btn btn-ghost">&#8592; Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Action filter chips -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        @foreach (var at in actionTypes)
+        {
+            var isActive = (actionFilter == at.Value) || (string.IsNullOrEmpty(at.Value) && string.IsNullOrEmpty(actionFilter));
+            var href     = string.IsNullOrEmpty(at.Value)
+                ? "/Admin/AuditLog"
+                : "/Admin/AuditLog?action=" + Uri.EscapeDataString(at.Value);
+            var chipCss  = isActive ? "chip active" : "chip";
+
+            <a href="@href" class="@chipCss">@at.Label</a>
+        }
+    </div>
+
+    <div class="table-wrapper">
+        @if (Model.Any())
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Action</th>
+                        <th>Performed By</th>
+                        <th>Claim ID</th>
+                        <th>Details</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model)
+                    {
+                        var pillClass = "audit-pill ";
+                        if      (log.Action.Contains("LOGIN"))    pillClass += "audit-login";
+                        else if (log.Action.Contains("LOGOUT"))   pillClass += "audit-logout";
+                        else if (log.Action.Contains("CLAIM"))    pillClass += "audit-claim";
+                        else if (log.Action.Contains("USER"))     pillClass += "audit-user";
+                        else if (log.Action.Contains("EXPORT"))   pillClass += "audit-export";
+                        else if (log.Action.Contains("PASSWORD")) pillClass += "audit-password";
+                        else                                      pillClass += "audit-default";
+
+                        var actionDisplay = log.Action.Replace("_", " ");
+                        var shortId       = !string.IsNullOrEmpty(log.ClaimId) && log.ClaimId.Length > 10
+                            ? log.ClaimId.Substring(0, 10) + "…"
+                            : log.ClaimId ?? "—";
+
+                        <tr>
+                            <td style="white-space:nowrap;">
+                                <div style="font-size:13px;font-weight:500;color:var(--surface-800);">@log.TimeAgo</div>
+                                <div style="font-size:11px;color:var(--surface-400);font-family:var(--font-mono);">@log.Timestamp.ToString("HH:mm:ss")</div>
+                            </td>
+                            <td>
+                                <span class="@pillClass">@actionDisplay</span>
+                            </td>
+                            <td style="font-size:13px;font-weight:600;color:var(--surface-800);">@log.PerformedBy</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(log.ClaimId))
+                                {
+                                    <a href="/Admin/ClaimDetails/@log.ClaimId" class="claim-chip">@shortId</a>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--surface-300);font-size:12px;">&mdash;</span>
+                                }
+                            </td>
+                            <td class="details-td" title="@log.Details">@(log.Details ?? "—")</td>
+                            <td style="font-size:12px;color:var(--surface-400);font-family:var(--font-mono);">
+                                @(log.IPAddress ?? "—")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <div class="pagination-info">Showing @Model.Count records &middot; Page @currentPage</div>
+                <div class="pagination-controls">
+                    @if (currentPage > 1)
+                    {
+                        var prevHref = string.IsNullOrEmpty(actionFilter)
+                            ? "/Admin/AuditLog?page=" + (currentPage - 1)
+                            : "/Admin/AuditLog?page=" + (currentPage - 1) + "&action=" + Uri.EscapeDataString(actionFilter);
+                        <a href="@prevHref" class="page-btn">&#8592; Prev</a>
+                    }
+                    <span class="page-btn active">@currentPage</span>
+                    @if (Model.Count == 50)
+                    {
+                        var nextHref = string.IsNullOrEmpty(actionFilter)
+                            ? "/Admin/AuditLog?page=" + (currentPage + 1)
+                            : "/Admin/AuditLog?page=" + (currentPage + 1) + "&action=" + Uri.EscapeDataString(actionFilter);
+                        <a href="@nextHref" class="page-btn">Next &#8594;</a>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">&#128203;</div>
+                <div class="empty-title">No audit records</div>
+                <div class="empty-text">System activity will appear here as users take actions.</div>
+            </div>
+        }
+    </div>
+</div>

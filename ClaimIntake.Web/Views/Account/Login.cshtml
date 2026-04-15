@@ -1,128 +1,145 @@
 ﻿@* ============================================================
    FILE: ClaimIntake.Web/Views/Account/Login.cshtml
-   PURPOSE: The login page HTML.
-   
-   "@" prefix = Razor syntax (mix of C# and HTML)
-   @model = tells Razor which ViewModel this view uses
-   @Html.* = Helper methods that generate safe HTML
-   asp-* = Tag Helpers (ASP.NET Core's way to add server logic to HTML tags)
+   Redesigned — Clean, professional, DM Sans font
    ============================================================ *@
 
 @model ClaimIntake.Web.Models.LoginViewModel
 @{
-    ViewData["Title"] = "Login - Claim Management System";
-    Layout = null;  // No layout wrapper for login page (standalone page)
+    ViewData["Title"] = "Sign In — Claims Portal";
+    Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
-    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="login-page">
 
-<div class="login-container">
+    <div class="login-container">
 
-    <!-- Logo / Header -->
-    <div class="login-header">
-        <div class="login-logo">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                <rect width="40" height="40" rx="8" fill="#1a56db"/>
-                <path d="M20 8L28 14V26L20 32L12 26V14L20 8Z"
-                      fill="white" opacity="0.9"/>
-                <circle cx="20" cy="20" r="4" fill="#1a56db"/>
-            </svg>
+        <!-- Brand -->
+        <div class="login-brand">
+            <div class="login-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <h1 class="login-title">Claims Portal</h1>
+            <p class="login-subtitle">Secure medical claim management system</p>
         </div>
-        <h1 class="login-title">Claims Portal</h1>
-        <p class="login-subtitle">Secure Medical Claim Management</p>
-    </div>
 
-    <!-- Login Form Card -->
-    <div class="login-card">
-        <h2 class="card-heading">Sign In to Your Account</h2>
-
-        @* Show error message if login failed *@
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <div class="alert alert-error" role="alert">
-                <span class="alert-icon">⚠</span>
-                @Model.ErrorMessage
-            </div>
-        }
-
-        @* asp-action="Login" asp-controller="Account" generates:
-           <form method="post" action="/Account/Login"> *@
-        <form asp-action="Login" asp-controller="Account" method="post">
-
-            @* Anti-forgery token: Hidden field that prevents CSRF attacks.
-               The server checks this token on every POST. *@
-            @Html.AntiForgeryToken()
-
-            <!-- Username Field -->
-            <div class="form-group">
-                <label asp-for="Username" class="form-label">Username</label>
-                <input asp-for="Username"
-                       class="form-control"
-                       placeholder="Enter your username"
-                       autocomplete="username"
-                       autofocus />
-                @* asp-validation-for shows the error message for this field *@
-                <span asp-validation-for="Username" class="field-error"></span>
+        <!-- Card -->
+        <div class="login-card">
+            <div style="font-size:18px;font-weight:700;color:var(--surface-900);margin-bottom:24px;text-align:center;">
+                Sign in to your account
             </div>
 
-            <!-- Password Field -->
-            <div class="form-group">
-                <label asp-for="Password" class="form-label">Password</label>
-                <div class="password-wrapper">
-                    <input asp-for="Password"
-                           class="form-control"
-                           placeholder="Enter your password"
-                           autocomplete="current-password"
-                           id="passwordInput" />
-                    <button type="button" class="toggle-password"
-                            onclick="togglePassword()"
-                            aria-label="Show/hide password">
-                        <span id="eyeIcon">👁</span>
-                    </button>
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-error" style="margin-bottom:20px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                    <span>@Model.ErrorMessage</span>
                 </div>
-                <span asp-validation-for="Password" class="field-error"></span>
+            }
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success" style="margin-bottom:20px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                    <span>@TempData["SuccessMessage"]</span>
+                </div>
+            }
+
+            <form asp-action="Login" asp-controller="Account" method="post" id="loginForm">
+                @Html.AntiForgeryToken()
+
+                <!-- Username -->
+                <div class="form-group" style="margin-bottom:18px;">
+                    <label asp-for="Username" class="form-label">Username</label>
+                    <input asp-for="Username"
+                           class="form-control"
+                           placeholder="Enter your username"
+                           autocomplete="username"
+                           autofocus />
+                    <span asp-validation-for="Username" class="form-error"></span>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group" style="margin-bottom:24px;">
+                    <label asp-for="Password" class="form-label">Password</label>
+                    <div class="pwd-wrap">
+                        <input asp-for="Password"
+                               class="form-control"
+                               placeholder="Enter your password"
+                               autocomplete="current-password"
+                               id="pwdInput"
+                               style="padding-right:44px;" />
+                        <button type="button" class="pwd-toggle" onclick="togglePwd()" aria-label="Toggle password">
+                            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="form-error"></span>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                        <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" />
+                    </svg>
+                    <span id="btnText">Sign In</span>
+                </button>
+            </form>
+
+            <!-- Demo credentials -->
+            <div class="demo-hint" style="margin-top:20px;">
+                <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--surface-400);margin-bottom:8px;font-weight:600;">Demo Accounts</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>Admin access</span>
+                        <code style="font-family:var(--font-mono);font-size:12px;background:var(--surface-200);padding:2px 8px;border-radius:4px;">admin / Admin@123</code>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>User access</span>
+                        <code style="font-family:var(--font-mono);font-size:12px;background:var(--surface-200);padding:2px 8px;border-radius:4px;">claimuser1 / Test@123</code>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            <!-- Submit Button -->
-            <button type="submit" class="btn btn-primary btn-block">
-                Sign In
-            </button>
-
-        </form>
-
-        <!-- Demo credentials hint (remove in production!) -->
-        <div class="demo-hint">
-            <p>Demo: <strong>claimuser1</strong> / <strong>Test@123</strong></p>
+        <!-- Footer -->
+        <div class="login-footer-text">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+            Secured with AES-256 encryption · HIPAA compliant
         </div>
     </div>
 
-    <p class="login-footer">
-        Secure connection. All data encrypted in transit.
-    </p>
-</div>
+    <script>
+            function togglePwd() {
+                const i = document.getElementById('pwdInput');
+                const icon = document.getElementById('eyeIcon');
+                if (i.type === 'password') {
+                    i.type = 'text';
+                    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+                } else {
+                    i.type = 'password';
+                    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+                }
+            }
 
-<script>
-    // Toggle password visibility (show/hide characters)
-    function togglePassword() {
-        var input = document.getElementById('passwordInput');
-        var icon  = document.getElementById('eyeIcon');
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.textContent = '🙈';
-        } else {
-            input.type = 'password';
-            icon.textContent = '👁';
-        }
-    }
-</script>
-
+            document.getElementById('loginForm').addEventListener('submit', function() {
+                const btn = document.getElementById('submitBtn');
+                const txt = document.getElementById('btnText');
+                btn.disabled = true;
+                txt.textContent = 'Signing in...';
+            });
+    </script>
 </body>
 </html>

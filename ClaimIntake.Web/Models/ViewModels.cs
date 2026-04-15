@@ -16,26 +16,26 @@ namespace ClaimIntake.Web.Models;
 /// <summary>
 /// Data the user types into the Login form.
 /// </summary>
-public class LoginViewModel
-{
-    // [Required] means the field can't be left empty
-    // ErrorMessage is what shows up in red under the field
-    [Required(ErrorMessage = "Please enter your username.")]
-    [StringLength(100, MinimumLength = 3,
-        ErrorMessage = "Username must be between 3 and 100 characters.")]
-    [Display(Name = "Username")]
-    public string Username { get; set; } = string.Empty;
+//public class LoginViewModel
+//{
+//    // [Required] means the field can't be left empty
+//    // ErrorMessage is what shows up in red under the field
+//    [Required(ErrorMessage = "Please enter your username.")]
+//    [StringLength(100, MinimumLength = 3,
+//        ErrorMessage = "Username must be between 3 and 100 characters.")]
+//    [Display(Name = "Username")]
+//    public string Username { get; set; } = string.Empty;
 
-    // [DataType(DataType.Password)] makes the browser hide the characters with ****
-    [Required(ErrorMessage = "Please enter your password.")]
-    [DataType(DataType.Password)]
-    [Display(Name = "Password")]
-    public string Password { get; set; } = string.Empty;
+//    // [DataType(DataType.Password)] makes the browser hide the characters with ****
+//    [Required(ErrorMessage = "Please enter your password.")]
+//    [DataType(DataType.Password)]
+//    [Display(Name = "Password")]
+//    public string Password { get; set; } = string.Empty;
 
-    // This will show a general error like "Invalid username or password"
-    // (we don't say which one is wrong - that's a security best practice!)
-    public string? ErrorMessage { get; set; }
-}
+//    // This will show a general error like "Invalid username or password"
+//    // (we don't say which one is wrong - that's a security best practice!)
+//    public string? ErrorMessage { get; set; }
+//}
 
 // ── CLAIM FORM VIEWMODEL ─────────────────────────────────────────────────────
 /// <summary>
@@ -240,19 +240,47 @@ public class UserProfileViewModel
 // ── ADMIN USER REGISTRATION ──────────────────────────────────────────────────
 public class AdminUserRegisterViewModel
 {
+    // ── Identity ─────────────────────────────────────────────
+
+    [Required(ErrorMessage = "Full name is required.")]
+    [StringLength(200, MinimumLength = 2, ErrorMessage = "Full name must be 2–200 characters.")]
+    [Display(Name = "Full Name")]
+    public string FullName { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Username is required.")]
-    [StringLength(100, MinimumLength = 3,
-        ErrorMessage = "Username must be 3-100 characters.")]
-    [RegularExpression(@"^[a-zA-Z0-9_.-]+$",
+    [StringLength(100, MinimumLength = 3, ErrorMessage = "Username must be 3–100 characters.")]
+    [RegularExpression(@"^[a-zA-Z0-9_.\-]+$",
         ErrorMessage = "Username can only contain letters, numbers, underscores, dots, and hyphens.")]
     [Display(Name = "Username")]
     public string Username { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Email address is required.")]
+    [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+    [StringLength(200, ErrorMessage = "Email must be under 200 characters.")]
+    [Display(Name = "Email Address")]
+    public string Email { get; set; } = string.Empty;
+
+    [StringLength(100)]
+    [Display(Name = "Department")]
+    public string? Department { get; set; }
+
+    [StringLength(20)]
+    [Display(Name = "Phone Number")]
+    public string? PhoneNumber { get; set; }
+
+    // ── Role ─────────────────────────────────────────────────
+
+    [Display(Name = "Role")]
+    public string Role { get; set; } = "User";
+
+    public static readonly List<string> AvailableRoles = new() { "User", "Admin" };
+
+    // ── Security ─────────────────────────────────────────────
+
     [Required(ErrorMessage = "Password is required.")]
-    [StringLength(100, MinimumLength = 8,
-        ErrorMessage = "Password must be at least 8 characters.")]
-    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])",
-        ErrorMessage = "Password must contain uppercase, lowercase, number, and special character.")]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters.")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&\-_#^])",
+        ErrorMessage = "Password must include uppercase, lowercase, a number, and a special character.")]
     [DataType(DataType.Password)]
     [Display(Name = "Password")]
     public string Password { get; set; } = string.Empty;
@@ -262,16 +290,14 @@ public class AdminUserRegisterViewModel
     [Compare("Password", ErrorMessage = "Passwords do not match.")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    [Display(Name = "Role")]
-    public string Role { get; set; } = "User";
+    /// <summary>When true, the controller sends a welcome email to the new user.</summary>
+    [Display(Name = "Send Welcome Email")]
+    public bool SendWelcomeEmail { get; set; } = true;
+
+    // ── UI State ──────────────────────────────────────────────
 
     public string? ErrorMessage { get; set; }
-
-    public static readonly List<string> AvailableRoles = new()
-    {
-        "User",
-        "Admin"
-    };
+    public string? SuccessMessage { get; set; }
 }
 
 // ── USER VIEW MODEL ──────────────────────────────────────────────────────────
@@ -283,7 +309,168 @@ public class UserViewModel
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public string CreatedBy { get; set; } = string.Empty;
-
+    public string? Email { get; set; }    // NEW
+    public string? FullName { get; set; }    // NEW
+    public string? Department { get; set; }    // NEW
+    public string? PhoneNumber { get; set; }    // NEW
+    public string? AvatarColor { get; set; }    // NEW
     public string StatusBadge => IsActive ? "Active" : "Inactive";
     public string StatusClass => IsActive ? "status-active" : "status-inactive";
+}
+
+
+// ============================================================
+// FILE: ClaimIntake.Web/Models/ViewModels.cs  (ADDITIONS)
+// Add these classes to your existing ViewModels.cs file
+// ============================================================
+
+// ── NOTIFICATION VIEW MODEL ──────────────────────────────
+// (Add to the existing ViewModels.cs namespace block)
+
+public class NotificationViewModel
+{
+    public int NotificationId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string Type { get; set; } = "Info";
+    public bool IsRead { get; set; }
+    public string? ClaimId { get; set; }
+    public string? ActionUrl { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public string TypeIcon => Type switch
+    {
+        "Success" => "✓",
+        "Error" => "✕",
+        "Warning" => "!",
+        "Claim" => "📋",
+        _ => "ℹ"
+    };
+
+    public string TypeClass => Type.ToLower();
+
+    public string TimeAgo
+    {
+        get
+        {
+            var diff = DateTime.UtcNow - CreatedAt;
+            if (diff.TotalMinutes < 1) return "just now";
+            if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes}m ago";
+            if (diff.TotalDays < 1) return $"{(int)diff.TotalHours}h ago";
+            if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
+            return CreatedAt.ToString("MMM dd");
+        }
+    }
+}
+
+// ── UPDATED ClaimSummaryViewModel  (replace existing) ────
+// Add Priority, DaysInSystem to ClaimSummaryViewModel
+
+public class ClaimSummaryViewModelV2 : ClaimSummaryViewModel
+{
+    public string Priority { get; set; } = "Normal";
+    public int DaysInSystem { get; set; }
+    public string DiagnosisCode { get; set; } = string.Empty;
+
+    public string PriorityClass => Priority.ToLower() switch
+    {
+        "urgent" => "priority-urgent",
+        "high" => "priority-high",
+        "low" => "priority-low",
+        _ => "priority-normal"
+    };
+
+    public string DaysLabel => DaysInSystem switch
+    {
+        0 => "Today",
+        1 => "Yesterday",
+        _ => $"{DaysInSystem}d ago"
+    };
+}
+
+// ── MONTHLY TREND VIEW MODEL ──────────────────────────────
+public class MonthlyTrendViewModel
+{
+    public string MonthLabel { get; set; } = string.Empty;
+    public int TotalClaims { get; set; }
+    public int Approved { get; set; }
+    public int Rejected { get; set; }
+    public int Pending { get; set; }
+    public decimal TotalAmount { get; set; }
+}
+
+// ── ENHANCED ADMIN DASHBOARD ──────────────────────────────
+public class AdminDashboardViewModelV2 : AdminDashboardViewModel
+{
+    public int UnderReviewClaims { get; set; }
+    public decimal ApprovedAmount { get; set; }
+    public List<MonthlyTrendViewModel> MonthlyTrend { get; set; } = new();
+    public int UnreadNotifs { get; set; }
+    public List<ClaimSummaryViewModel> RecentClaims { get; set; } = new();
+
+    // Chart data serialized for JS
+    public string MonthLabels => System.Text.Json.JsonSerializer.Serialize(MonthlyTrend.Select(m => m.MonthLabel).ToList());
+    public string MonthTotals => System.Text.Json.JsonSerializer.Serialize(MonthlyTrend.Select(m => m.TotalClaims).ToList());
+    public string MonthApproved => System.Text.Json.JsonSerializer.Serialize(MonthlyTrend.Select(m => m.Approved).ToList());
+    public string MonthRejected => System.Text.Json.JsonSerializer.Serialize(MonthlyTrend.Select(m => m.Rejected).ToList());
+    public string MonthAmounts => System.Text.Json.JsonSerializer.Serialize(MonthlyTrend.Select(m => (double)m.TotalAmount).ToList());
+}
+public class ChangePasswordViewModel
+{
+    [Required(ErrorMessage = "Current password is required.")]
+    [DataType(DataType.Password)]
+    [Display(Name = "Current Password")]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "New password is required.")]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters.")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&\-_#^])",
+        ErrorMessage = "Password must include uppercase, lowercase, a number, and a special character.")]
+    [DataType(DataType.Password)]
+    [Display(Name = "New Password")]
+    public string NewPassword { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Please confirm your new password.")]
+    [DataType(DataType.Password)]
+    [Display(Name = "Confirm New Password")]
+    [Compare("NewPassword", ErrorMessage = "New passwords do not match.")]
+    public string ConfirmNewPassword { get; set; } = string.Empty;
+
+    public string? ErrorMessage { get; set; }
+}
+
+public class AuditLogViewModel
+{
+    public int AuditId { get; set; }
+    public string? ClaimId { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string PerformedBy { get; set; } = string.Empty;
+    public string? IPAddress { get; set; }
+    public string? Details { get; set; }
+    public DateTime Timestamp { get; set; }
+
+    public string TimeAgo
+    {
+        get
+        {
+            var diff = DateTime.UtcNow - Timestamp;
+            if (diff.TotalMinutes < 1) return "just now";
+            if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes}m ago";
+            if (diff.TotalDays < 1) return $"{(int)diff.TotalHours}h ago";
+            return Timestamp.ToString("MMM dd, yyyy HH:mm");
+        }
+    }
+
+    public string ActionBadgeClass => Action switch
+    {
+        "USER_LOGIN" => "badge-approved",
+        "USER_LOGOUT" => "badge-hold",
+        "CLAIM_STATUS_UPDATED" => "badge-review",
+        "USER_REGISTERED" => "badge-approved",
+        "USER_DEACTIVATED" => "badge-rejected",
+        "USER_REACTIVATED" => "badge-approved",
+        "CLAIMS_EXPORTED" => "badge-review",
+        "PASSWORD_CHANGED" => "badge-review",
+        _ => "badge-hold"
+    };
 }
